@@ -851,3 +851,23 @@
             from-slate-800 to-slate-900;
         }
     </style>
+<script>
+    const head = document.getElementsByTagName('head')[0];
+    
+    // 1. Favicon (Browser Tab Logo)
+    const favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.type = 'image/svg+xml';
+    favicon.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z'/></svg>";
+    head.appendChild(favicon);
+
+    // 2. Apple Touch Icon (Mobile Home Screen)
+    const appleIcon = document.createElement('link');
+    appleIcon.rel = 'apple-touch-icon';
+    appleIcon.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z'/></svg>";
+    head.appendChild(appleIcon);
+
+    // 3. Dynamic High-CTR Title for Google
+    // یہ ٹائٹل گوگل میں آپ کی ویب سائٹ کو پہلے نمبر پر لانے میں مدد کرے گا
+    document.title = "Smart Humanizer | #1 Free AI to Human Text Converter (100% Pass)";
+</script>
