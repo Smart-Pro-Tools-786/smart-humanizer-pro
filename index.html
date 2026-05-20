@@ -1,230 +1,409 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:async';
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zaigham Gaming Area</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-// یہ دو اسکرینیں پارٹ 2 اور 3 میں جڑیں گی
-// ابھی ایرر سے بچنے کے لیے ان کی فرضی کلاسز نیچے بنا دی ہیں
-class DepositScreen extends StatelessWidget { const QuizApp(); const DepositScreen({super.key}); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("ڈپازٹ"))); }
-class AdminDashboardScreen extends StatelessWidget { const AdminDashboardScreen({super.key}); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("ایڈمن"))); }
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); 
-  runApp(const QuizApp());
-}
-
-class QuizApp extends StatelessWidget {
-  const QuizApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Zaigham Skill Quiz',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return const HomeScreen();
-          }
-          return const LoginScreen();
-        },
-      ),
-    );
-  }
-}
-
-// 1. جی میل لاگ ان اسکرین
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
-
-  Future<void> signInWithGoogle(BuildContext context) async {
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      User? user = userCredential.user;
-
-      if (user != null) {
-        DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-        DocumentSnapshot doc = await userRef.get();
-
-        if (!doc.exists) {
-          await userRef.set({
-            'uid': user.uid,
-            'name': user.displayName,
-            'email': user.email,
-            'photo': user.photoURL,
-            'wallet': 0.0,
-            'refers': 0,
-            'joinedAt': DateTime.now(),
-          });
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            direction: rtl;
         }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("لاگ ان میں خرابی آئی: $e")),
-      );
-    }
-  }
+        .screen {
+            display: none;
+            padding: 20px;
+        }
+        .active {
+            display: block;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        /* خفیہ 786 بٹن کا ڈیزائن */
+        #secret-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 12px;
+            color: #b5b5b5;
+            cursor: pointer;
+            user-select: none;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 400px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16)),
-          icon: const Icon(Icons.login),
-          label: const Text("Gmail کے ذریعے لاگ ان کریں"),
-          onPressed: () => signInWithGoogle(context),
-        ),
-      ),
-    );
-  }
-}
+    <div id="login-screen" class="screen active">
+        <div class="box">
+            <h2>Zaigham کوئز گیم میں خوش آمدید</h2>
+            <p>گیم کھیلنے کے لیے اپنے گوگل اکاؤنٹ سے لاگ ان کریں:</p>
+            <button class="btn" onclick="signInWithGoogle()">Gmail سے لاگ ان کریں</button>
+        </div>
+    </div>
 
-// 2. ہوم اسکرین اور خفیہ بٹن لاجک
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+    <div id="home-screen" class="screen">
+        <div id="secret-btn" onclick="handleSecretTap()">786</div>
+        
+        <div class="box">
+            <h2>خوش آمدید، <span id="user-name">صارف</span>!</h2>
+            <h3 style="color: green;">آپ کا بیلنس: <span id="user-balance">0</span> روپے</h3>
+            <button class="btn" style="background-color: #28a745;" onclick="showScreen('deposit-screen')">پیسے جمع کریں (EasyPaisa)</button>
+            <br>
+            <button class="btn" style="background-color: #ffc107; color: black;" onclick="startQuizMatch()">گیم شروع کریں (فیس 50 روپے)</button>
+        </div>
+    </div>
+    <div id="deposit-screen" class="screen">
+        <div class="box" style="border: 2px solid #28a745;">
+            <h3>رقم جمع کروائیں</h3>
+            <p>ہمارے اس نمبر پر رقم بھیج کر اسکرین شاٹ اپلوڈ کریں:</p>
+            <p><strong>EasyPaisa نمبر:</strong> 03219379597</p>
+            <p><strong>اکاؤنٹ نام:</strong> Syed Ali Hassan Shah</p>
+            <hr>
+            <input type="number" id="deposit-amount" placeholder="رقم لکھیں (روپے)" style="width:90%; padding:8px; margin:5px;"><br>
+            <input type="text" id="trx-id" placeholder="ٹرانزیکشن ID (Trx ID)" style="width:90%; padding:8px; margin:5px;"><br>
+            <input type="file" id="screenshot-file" accept="image/*" style="margin:10px;"><br>
+            <button class="btn" style="background-color: #28a745;" onclick="submitDeposit()">تصدیق کے لیے بھیجیں</button>
+            <button class="btn" style="background-color: #6c757d;" onclick="showScreen('home-screen')">واپس جائیں</button>
+        </div>
+    </div>
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+    <div id="admin-screen" class="screen">
+        <div class="box" style="border: 2px solid red; max-width: 600px;">
+            <h2 style="color: red;">سپر ایڈمن کنٹرول پینل</h2>
+            <h4 style="background: #333; color: #fff; padding: 10px;">ایپ کا کل منافع (Profit): <span id="admin-profit">0</span> روپے</h4>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <h3>صارفین کی رسیدیں (Requests):</h3>
+                <div id="admin-requests-list">
+                    </div>
+            </div>
+            <button class="btn" style="background-color: #6c757d;" onclick="showScreen('home-screen')">ایڈمن پینل بند کریں</button>
+        </div>
+    </div>
 
-class _HomeScreenState extends State<HomeScreen> {
-  int tapCount = 0;
-  Timer? tapTimer;
-  double myBalance = 0.0;
-  String userId = FirebaseAuth.instance.currentUser?.uid ?? "";
+    <div id="quiz-screen" class="screen">
+        <div class="box" style="border: 2px solid #007bff;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                <span>سوال نمبر: <span id="q-current">1</span>/5</span>
+                <span style="color: red;">وقت: <span id="q-timer">10</span> سیکنڈ</span>
+            </div>
+            <hr>
+            <h3 id="quiz-question" style="margin: 20px 0; font-size: 20px;">یہاں اردو میں سوال آئے گا؟</h3>
+            
+            <button class="btn" id="opt1" style="width: 100%; background: #f8f9fa; color: black; border: 1px solid #ccc;" onclick="checkAnswer(0)"></button>
+            <button class="btn" id="opt2" style="width: 100%; background: #f8f9fa; color: black; border: 1px solid #ccc;" onclick="checkAnswer(1)"></button>
+            <button class="btn" id="opt3" style="width: 100%; background: #f8f9fa; color: black; border: 1px solid #ccc;" onclick="checkAnswer(2)"></button>
+        </div>
+    </div>
+    <script>
+        // اپنے فائر بیس کنجوجر کی تفصیلات یہاں ڈالیں (Firebase Console سے ملیں گی)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // فائر بیس کو لائیو شروع کریں
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-  @override
-  void initState() {
-    super.initState();
-    FirebaseFirestore.instance.collection('users').doc(userId).snapshots().listen((doc) {
-      if (doc.exists && mounted) {
-        setState(() {
-          myBalance = (doc.data()?['wallet'] ?? 0.0).toDouble();
+        let currentUser = null;
+        let tapCount = 0;
+        let tapTimer = null;
+
+        // اسکرینیں تبدیل کرنے کا آسان فنکشن
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // گوگل جی میل لاگ ان سسٹم
+        function signInWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then((result) => {
+                currentUser = result.user;
+                
+                // یوزر کا ڈیٹا فائر بیس کے لائف ٹائم بیک اپ پر سیو کریں
+                const userRef = db.collection('users').doc(currentUser.uid);
+                userRef.get().then((doc) => {
+                    if (!doc.exists) {
+                        userRef.set({
+                            uid: currentUser.uid,
+                            name: currentUser.displayName,
+                            email: currentUser.email,
+                            wallet: 0.0,
+                            refers: 0,
+                            joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                });
+            }).catch((error) => {
+                alert("لاگ ان میں مسئلہ آیا: " + error.message);
+            });
+        }
+
+        // لاگ ان تبدیلیاں لائیو سنیں
+        auth.onAuthStateChanges((user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-name').innerText = user.displayName;
+                
+                // فائر بیس سے لائیو بیلنس سننا
+                db.collection('users').doc(user.uid).onSnapshot((doc) => {
+                    if (doc.exists) {
+                        document.getElementById('user-balance').innerText = doc.data().wallet || 0;
+                    }
+                });
+                showScreen('home-screen');
+            } else {
+                showScreen('login-screen');
+            }
         });
-      }
-    });
-  }
 
-  void handleSecretTap() {
-    tapTimer?.cancel();
-    tapTimer = Timer(const Duration(seconds: 3), () {
-      tapCount = 0;
-    });
+        // خفیہ "786" بٹن کی لاجک (3 سیکنڈ کے اندر 10 بار کلک لازمی ہے)
+        function handleSecretTap() {
+            clearTimeout(tapTimer);
+            tapTimer = setTimeout(() => { tapCount = 0; }, 3000);
 
-    tapCount++;
-    if (tapCount == 10) {
-      tapCount = 0;
-      tapTimer?.cancel();
-      showSecretDialog();
-    }
-  }
+            tapCount++;
+            if (tapCount === 10) {
+                tapCount = 0;
+                clearTimeout(tapTimer);
+                
+                // خفیہ پاپ اپ باکس
+                let code = prompt("خفیہ کوڈ درج کریں:");
+                let phone = prompt("اپنا رجسٹرڈ موبائل نمبر درج کریں:");
 
-  void showSecretDialog() {
-    final TextEditingController codeController = TextEditingController();
-    final TextEditingController phoneController = TextEditingController();
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("خفیہ ایڈمن لاگ ان"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: codeController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: "خفیہ کوڈ ڈالیں"),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: "موبائل نمبر ڈالیں"),
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                if (codeController.text.trim() == "zaigham_7866" &&
-                    phoneController.text.trim() == "03219379597") {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
-                  );
+                if (code === "zaigham_7866" && phone === "03219379597") {
+                    loadAdminPanel(); // ایڈمن پینل کا ڈیٹا لوڈ کریں (پارٹ 4 میں بنے گا)
+                    showScreen('admin-screen');
                 } else {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("غلط معلومات!")),
-                  );
+                    alert("غلط معلومات! رسائی ممنوع ہے۔");
                 }
-              },
-              child: const Text("ایڈمن پینل کھولیں"),
-            ),
-          ],
-        );
-      },
-    );
-  }
+            }
+        }
+        // 1. رقم جمع کروانے (EasyPaisa) کا بیک اپ سسٹم
+        function submitDeposit() {
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+            const trxId = document.getElementById('trx-id').value.trim();
+            const fileInput = document.getElementById('screenshot-file');
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Zaigham Gaming Area")),
-      body: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "آپ کا موجودہ بیلنس: $myBalance روپے", 
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const DepositScreen()),
-                    );
-                  },
-                  child: const Text("پیسے جمع کریں (EasyPaisa/JazzCash)"),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 10,
-            right: 15,
-            child: GestureDetector(
-              onTap: handleSecretTap,
-              child: const Text(
-                "786", 
-                style: TextStyle(fontSize: 14, color: Colors.grey)
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+            if (!amount || !trxId || fileInput.files.length === 0) {
+                alert("برائے مہربانی تمام معلومات مکمل کریں اور اسکرین شاٹ منتخب کریں!");
+                return;
+            }
+
+            // رسید کا ڈیٹا فائر بیس پر لائف ٹائم کے لیے محفوظ کریں
+            db.collection('deposit_requests').add({
+                uid: currentUser.uid,
+                userName: currentUser.displayName,
+                amount: amount,
+                trxId: trxId,
+                status: 'pending',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert("آپ کی رسید کامیابی سے اپلوڈ ہو گئی ہے! ایڈمن کی تصدیق کے بعد رقم شامل کر دی جائے گی۔");
+                showScreen('home-screen');
+            }).catch(err => alert("خرابی: " + err.message));
+        }
+
+        // 2. ایڈمن پینل کا ڈیٹا لوڈ اور اپروو/ریجیکٹ سسٹم
+        function loadAdminPanel() {
+            // لائیو پرافٹ میٹر سنیں
+            db.collection('admin_earnings').onSnapshot(snapshot => {
+                let totalProfit = 0;
+                snapshot.forEach(doc => { totalProfit += doc.data().amount || 0; });
+                document.getElementById('admin-profit').innerText = totalProfit;
+            });
+
+            // پینڈنگ رسیدیں لائیو دکھائیں
+            db.collection('deposit_requests').where('status', '==', 'pending').onSnapshot(snapshot => {
+                const listDiv = document.getElementById('admin-requests-list');
+                listDiv.innerHTML = "";
+                
+                if(snapshot.empty) {
+                    listDiv.innerHTML = "<p>کوئی پینڈنگ رسید موجود نہیں ہے۔</p>";
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const req = doc.data();
+                    const reqId = doc.id;
+
+                    listDiv.innerHTML += `
+                        <div class="box" style="border:1px solid #ccc; text-align:right;">
+                            <p><strong>صارف کا نام:</strong> ${req.userName}</p>
+                            <p><strong>رقم:</strong> ${req.amount} روپے</p>
+                            <p><strong>Trx ID:</strong> ${req.trxId}</p>
+                            <button class="btn" style="background-color:green; padding:5px 10px; font-size:14px;" onclick="approveRequest('${reqId}', '${req.uid}', ${req.amount})">منظور کریں (Approve)</button>
+                            <button class="btn" style="background-color:red; padding:5px 10px; font-size:14px;" onclick="rejectRequest('${reqId}')">مسترد کریں (Reject)</button>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function approveRequest(reqId, uid, amount) {
+            // یوزر کے والٹ میں رقم پلس کریں اور اسٹیٹس تبدیل کریں
+            const userRef = db.collection('users').doc(uid);
+            db.runTransaction(transaction => {
+                return transaction.get(userRef).then(userDoc => {
+                    let currentWallet = userDoc.data().wallet || 0;
+                    transaction.update(userRef, { wallet: currentWallet + amount });
+                    transaction.update(db.collection('deposit_requests').doc(reqId), { status: 'approved' });
+                });
+            }).then(() => alert("رقم منظور کر کے صارف کے اکاؤنٹ میں ڈال دی گئی ہے!"));
+        }
+
+        function rejectRequest(reqId) {
+            db.collection('deposit_requests').doc(reqId).update({ status: 'rejected' })
+            .then(() => alert("رسید مسترد کر دی گئی ہے!"));
+        }
+
+        // 3. لائف ٹائم اردو کوئز گیم کی لاجک
+        let questions = [];
+        let currentQIndex = 0;
+        let score = 0;
+        let quizTimer = null;
+        let timeLeft = 10;
+        let bothWrong = true;
+
+        function startQuizMatch() {
+            // چیک کریں کہ اکاؤنٹ میں 50 روپے ہیں یا نہیں
+            db.collection('users').doc(currentUser.uid).get().then(doc => {
+                let currentBalance = doc.data().wallet || 0;
+                if (currentBalance < 50) {
+                    alert("گیم کھیلنے کے لیے کم از کم 50 روپے بیلنس ہونا لازمی ہے!");
+                    return;
+                }
+
+                // فیس کٹنگ (گیم شروع ہوتے ہی 50 روپے عارضی مائنس)
+                db.collection('users').doc(currentUser.uid).update({ wallet: currentBalance - 50 });
+
+                // لائف ٹائم لائیو اردو سوالات لوڈ کریں (بیک اپ لسٹ)
+                questions = [
+                    { q: "پاکستان کا قومی کھیل کون سا ہے؟", opts: ["کرکٹ", "ہاکی", "فٹ بال"], a: 1 },
+                    { q: "قرآن مجید کی سب سے بڑی سورت کون سی ہے؟", opts: ["سورت آل عمران", "سورت البقرہ", "سورت یٰسین"], a: 1 },
+                    { q: "پاکستان کے بانی کون ہیں؟", opts: ["علامہ اقبال", "قائد اعظم", "لیاقت علی خان"], a: 1 },
+                    { q: "دنیا کی سب سے اونچی چوٹی کون سی ہے؟", opts: ["کے ٹو", "ماؤنٹ ایورسٹ", "ناگا پربت"], a: 1 },
+                    { q: "پاکستان کا قومی لباس کون سا ہے؟", opts: ["شلوار قمیض", "پینٹ کوٹ", "کُرتا پاجامہ"], a: 0 }
+                ].sort(() => Math.random() - 0.5); // ہر بار سوالات مکس ہو جائیں گے
+
+                currentQIndex = 0;
+                score = 0;
+                bothWrong = true;
+                showScreen('quiz-screen');
+                loadQuestion();
+            });
+        }
+
+        function loadQuestion() {
+            if (currentQIndex >= 5) {
+                finishQuizMatch();
+                return;
+            }
+
+            timeLeft = 10;
+            document.getElementById('q-current').innerText = currentQIndex + 1;
+            document.getElementById('q-timer').innerText = timeLeft;
+
+            let currentQ = questions[currentQIndex];
+            document.getElementById('quiz-question').innerText = currentQ.q;
+            document.getElementById('opt1').innerText = currentQ.opts[0];
+            document.getElementById('opt2').innerText = currentQ.opts[1];
+            document.getElementById('opt3').innerText = currentQ.opts[2];
+
+            clearInterval(quizTimer);
+            quizTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('q-timer').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(quizTimer);
+                    currentQIndex++;
+                    loadQuestion(); // ٹائم ختم تو اگلا سوال
+                }
+            }, 1000);
+        }
+
+        function checkAnswer(selectedOpt) {
+            clearInterval(quizTimer);
+            let currentQ = questions[currentQIndex];
+            
+            if (selectedOpt === currentQ.a) {
+                score++;
+                bothWrong = false; // اگر ایک بھی صحیح ہو جائے تو دونوں غلط نہیں مانے جائیں گے
+            }
+
+            currentQIndex++;
+            setTimeout(loadQuestion, 500);
+        }
+
+        // میچ ختم ہونے اور پیسوں کے حساب کتاب کا خودکار نظام
+        function finishQuizMatch() {
+            clearInterval(quizTimer);
+            let totalPool = 100; // 50 + 50 روپے فرضی میچ پول
+            let adminFee = 20;   // 20% آپ کا پرافٹ
+            let winnerPrize = 80; // جیتنے والے کا انعام
+
+            // کلوژر 1: اگر کھلاڑی جیت گیا (3 یا اس سے زیادہ صحیح جواب)
+            if (score >= 3 && !bothWrong) {
+                db.collection('users').doc(currentUser.uid).get().then(doc => {
+                    let currentBal = doc.data().wallet || 0;
+                    db.collection('users').doc(currentUser.uid).update({ wallet: currentBal + winnerPrize });
+                });
+
+                // ایڈمن کا 20 روپے پرافٹ اکاؤنٹ میں جمع کریں
+                db.collection('admin_earnings').add({
+                    amount: adminFee,
+                    reason: '20% Game Platform Fee',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert("میچ ختم! مبارک ہو آپ جیت گئے۔ 80 روپے آپ کے والٹ میں شامل کر دیے گئے ہیں اور 20 روپے ایڈمن فیس کٹ گئی ہے۔");
+            } 
+            // کلوژر 2: اگر کھلاڑی ہار گیا یا دونوں کے جوابات غلط رہے
+            else {
+                // پورے 100 روپے ایڈمن کے اکاؤنٹ میں ضبط
+                db.collection('admin_earnings').add({
+                    amount: totalPool,
+                    reason: 'Both Players Failed / Match Lost (100% Retained)',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert("میچ ختم! جوابات غلط ہونے کی وجہ سے آپ میچ ہار گئے ہیں اور رقم ضبط کر لی گئی ہے۔");
+            }
+            showScreen('home-screen');
+        }
+    </script>
+</body>
+</html>
+
+    </script>
