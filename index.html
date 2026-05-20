@@ -6,414 +6,430 @@
     <title>Zaigham Gaming Area</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            background: var(--bg-gradient);
             margin: 0;
             padding: 0;
-            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             direction: rtl;
         }
         .screen {
             display: none;
-            padding: 20px;
+            width: 100%;
+            max-width: 420px;
+            padding: 15px;
+            box-sizing: border-box;
         }
         .active {
             display: block;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .box {
-            background: white;
-            padding: 25px;
-            margin: 20px auto;
-            max-width: 450px;
-            border-radius: 12px;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px 25px;
+            border-radius: 24px;
+            box-shadow: 0px 10px 30px rgba(0,0,0,0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
         }
-        .btn {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 15px;
-            width: 100%;
-            font-weight: bold;
+        h2.brand-title {
+            color: var(--primary-color);
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
         }
-        .btn:hover {
-            background-color: #0056b3;
+        .input-group {
+            margin-bottom: 15px;
+            text-align: right;
+        }
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: #4b5563;
+            margin-bottom: 5px;
+            font-weight: 600;
         }
         input {
-            width: 90%;
-            padding: 10px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
             text-align: center;
-            font-size: 15px;
+            transition: all 0.3s ease;
+            font-weight: bold;
         }
+        input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+        }
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            transition: all 0.2s ease;
+        }
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.4);
+        }
+        .btn:active { transform: translateY(1px); }
         #secret-btn {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            font-size: 13px;
-            color: #c0c0c0;
+            top: 20px;
+            left: 20px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.4);
             cursor: pointer;
             user-select: none;
             font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
+
     <div id="login-screen" class="screen active">
         <div class="box">
-            <h2 style="color: #007bff;">Zaigham Gaming Area</h2>
-            <h3>لاگ ان کریں</h3>
-            <p>گیم کھیلنے کے لیے اپنا اکاؤنٹ لاگ ان کریں:</p>
+            <h2 class="brand-title">Zaigham Gaming Area</h2>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 25px;">صرف نام اور 4 ہندسوں کا پن کوڈ لکھ کر فوری لاگ ان کریں</p>
             
-            <input type="number" id="login-phone" placeholder="موبائل نمبر درج کریں (مثال: 03001234567)"><br>
-            <input type="password" id="login-pass" placeholder="اپنا پاس ورڈ لکھیں"><br>
-            
-            <button class="btn" onclick="loginWithPhone()">لاگ ان کریں</button>
-            
-            <p style="margin-top: 20px; font-size: 14px;">
-                اگر آپ کا اکاؤنٹ نہیں بنا ہوا تو؟ 
-                <a href="#" onclick="showScreen('signup-screen')" style="color: #007bff; font-weight: bold; text-decoration: none;">نیا اکاؤنٹ بنائیں</a>
-            </p>
-        </div>
-    </div>
+            <div class="input-group">
+                <label>آپ کا پورا نام:</label>
+                <input type="text" id="login-name" placeholder="یہاں اپنا نام لکھیں">
+            </div>
 
-    <div id="signup-screen" class="screen">
-        <div class="box" style="border-top: 4px solid #17a2b8;">
-            <h3>نیا اکاؤنٹ بنائیں</h3>
-            <p>اپنی معلومات درج کر کے گیم میں رجسٹر ہوں:</p>
+            <div class="input-group">
+                <label>موبائل نمبر:</label>
+                <input type="number" id="login-phone" placeholder="مثال: 03001234567">
+            </div>
             
-            <input type="text" id="signup-name" placeholder="صارف کا پورا نام لکھیں"><br>
-            <input type="number" id="signup-phone" placeholder="موبائل نمبر (یہ آپ کا لاگ ان ID ہوگا)"><br>
-            <input type="password" id="signup-pass" placeholder="مبوط پاس ورڈ سیٹ کریں"><br>
+            <div class="input-group">
+                <label>4 ہندسوں کا خفیہ پن (PIN Code):</label>
+                <input type="password" id="login-pin" maxlength="4" placeholder="کوئی سا بھی 4 ہندسوں کا کوڈ لکھیں">
+            </div>
             
-            <button class="btn" style="background-color: #17a2b8;" onclick="registerUser()">اکاؤنٹ رجسٹر کریں</button>
-            
-            <p style="margin-top: 20px; font-size: 14px;">
-                پہلے سے اکاؤنٹ موجود ہے؟ 
-                <a href="#" onclick="showScreen('login-screen')" style="color: #007bff; font-weight: bold; text-decoration: none;">یہاں لاگ ان کریں</a>
-            </p>
+            <button class="btn" style="margin-top: 10px;" onclick="handleInstantLogin()">لاگ ان کریں</button>
         </div>
     </div>
     <div id="home-screen" class="screen">
         <div id="secret-btn" onclick="handleSecretTap()">786</div>
         
-        <div class="box" style="border-top: 4px solid #007bff;">
-            <h2 style="color: #333;">Welcome!</h2>
-            <h2 style="margin: 5px 0;"><span id="user-name" style="color: #007bff;">صارف</span></h2>
-            <hr style="border: 0.5px solid #eee; margin: 15px 0;">
+        <div class="box" style="border-top: 5px solid var(--primary-color);">
+            <p style="color: #6b7280; font-size: 14px; margin: 0;">خوش آمدید</p>
+            <h2 style="margin: 5px 0 25px 0; color: #1f2937;"><span id="user-name" style="color: var(--primary-color);">صارف</span> Shah</h2>
             
-            <p style="font-size: 16px; margin-bottom: 5px;">آپ کا موجودہ والٹ بیلنس:</p>
-            <h1 style="color: #28a745; margin: 0 0 20px 0; font-size: 36px;"><span id="user-balance">0</span> روپے</h1>
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 18px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); margin-bottom: 25px;">
+                <p style="margin: 0; font-size: 14px; opacity: 0.9;">آپ کا موجودہ بیلنس</p>
+                <h1 style="margin: 10px 0 0 0; font-size: 38px; font-weight: 800;"><span id="user-balance">0</span> PKR</h1>
+            </div>
             
-            <button class="btn" style="background-color: #28a745;" onclick="showScreen('deposit-screen')">پیسے جمع کریں (EasyPaisa)</button>
+            <button class="btn" style="background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); margin-bottom: 12px;" onclick="showScreen('deposit-screen')">📥 رقم جمع کریں (EasyPaisa)</button>
             
-            <button class="btn" style="background-color: #ffc107; color: black; margin-top: 12px;" onclick="startQuizMatch()">کوئز گیم کھیلیں (فیس 50 روپے)</button>
+            <button class="btn" style="background: linear-gradient(to right, #f59e0b, #d97706); color: white; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);" onclick="startQuizMatch()">🎮 کوئز میچ کھیلیں (فیس 50 روپے)</button>
             
-            <hr style="border: 0.5px solid #eee; margin: 20px 0;">
-            <button class="btn" style="background-color: #dc3545; padding: 8px; font-size: 14px; width: auto;" onclick="logoutUser()">اکاؤنٹ لاگ آؤٹ کریں</button>
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 25px 0;">
+            <button class="btn" style="background: #9ca3af; box-shadow: none; padding: 10px; font-size: 14px; width: auto;" onclick="logoutUser()">اکاؤنٹ لاگ آؤٹ کریں</button>
         </div>
     </div>
+
     <div id="deposit-screen" class="screen">
-        <div class="box" style="border-top: 4px solid #28a745;">
-            <h3 style="color: #28a745;">رقم جمع کروائیں (EasyPaisa)</h3>
-            <p style="font-size: 14px; color: #666;">نیچے دیے گئے اکاؤنٹ پر رقم بھیجیں اور فارم فل کریں:</p>
+        <div class="box" style="border-top: 5px solid #10b981;">
+            <h3 style="color: #10b981; margin-top: 0; font-size: 22px;">رقم جمع کروائیں (EasyPaisa)</h3>
             
-            <div style="background-color: #e8f5e9; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 15px;">
-                <p style="margin: 5px 0;"><strong>EasyPaisa نمبر:</strong> <span style="color: #28a745; font-weight: bold;">03219379597</span></p>
-                <p style="margin: 5px 0;"><strong>اکاؤنٹ نام:</strong> Syed Ali Hassan Shah</p>
+            <div style="background: #f0fdf4; padding: 15px; border-radius: 14px; border: 1px dashed #10b981; margin-bottom: 20px; text-align: right;">
+                <p style="margin: 5px 0; font-size: 15px;"><strong>EasyPaisa نمبر:</strong> <span style="color: #10b981; font-weight: bold; font-size: 16px;">03219379597</span></p>
+                <p style="margin: 5px 0; font-size: 15px;"><strong>اکاؤنٹ ہولڈر نام:</strong> Syed Ali Hassan Shah</p>
             </div>
             
-            <hr style="border: 0.5px solid #eee; margin: 15px 0;">
+            <div class="input-group">
+                <label>بھیجی گئی رقم (روپے):</label>
+                <input type="number" id="deposit-amount" placeholder="رقم درج کریں">
+            </div>
             
-            <label style="display:block; text-align:right; font-weight:bold; margin-top:10px;">بھیجی گئی رقم لکھیں:</label>
-            <input type="number" id="deposit-amount" placeholder="رقم درج کریں (روپے)"><br>
+            <div class="input-group">
+                <label>ٹرانزیکشن ID (Trx ID):</label>
+                <input type="text" id="trx-id" placeholder="11 ہندسوں کی آئی ڈی لکھیں">
+            </div>
             
-            <label style="display:block; text-align:right; font-weight:bold; margin-top:10px;">ٹرانزیکشن ID (Trx ID):</label>
-            <input type="text" id="trx-id" placeholder="ٹی آر ایکس آئی ڈی لکھیں"><br>
-            
-            <label style="display:block; text-align:right; font-weight:bold; margin-top:10px;">پیمنٹ کی رسید / اسکرین شاٹ:</label>
-            <input type="file" id="screenshot-file" accept="image/*" style="border: none; background: #fafafa; padding: 5px;"><br>
-            
-            <button class="btn" style="background-color: #28a745;" onclick="submitDeposit()">تصدیق کے لیے بھیجیں</button>
-            <button class="btn" style="background-color: #6c757d; margin-top: 10px;" onclick="showScreen('home-screen')">واپس ہوم پر جائیں</button>
+            <button class="btn" style="background: #10b981;" onclick="submitDeposit()">رسید تصدیق کے لیے بھیجیں</button>
+            <button class="btn" style="background: #6b7280; margin-top: 10px; box-shadow: none;" onclick="showScreen('home-screen')">واپس جائیں</button>
         </div>
     </div>
+
     <div id="quiz-screen" class="screen">
-        <div class="box" style="border-top: 4px solid #007bff;">
-            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-bottom: 10px;">
-                <span style="color: #555;">سوال نمبر: <span id="q-current" style="color:#007bff;">1</span>/5</span>
-                <span style="color: #dc3545;">وقت: <span id="q-timer">10</span> سیکنڈ</span>
+        <div class="box" style="border-top: 5px solid var(--primary-color);">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; margin-bottom: 12px; color: #4b5563;">
+                <span>سوال: <span id="q-current" style="color: var(--primary-color);">1</span>/5</span>
+                <span style="color: var(--danger-color);">وقت: <span id="q-timer">10</span> سیکنڈ</span>
             </div>
             
-            <div style="width: 100%; background-color: #e0e0e0; height: 6px; border-radius: 3px; margin-bottom: 20px; overflow: hidden;">
-                <div id="timer-bar" style="background-color: #dc3545; height: 100%; width: 100%; transition: width 1s linear;"></div>
+            <div style="width: 100%; background: #e5e7eb; height: 8px; border-radius: 4px; margin-bottom: 25px; overflow: hidden;">
+                <div id="timer-bar" style="background: var(--danger-color); height: 100%; width: 100%; transition: width 1s linear;"></div>
             </div>
             
-            <h3 id="quiz-question" style="margin: 25px 0; font-size: 20px; line-height: 1.6; color: #222;">یہاں لائیو اردو سوال لوڈ ہو کر شو ہوگا؟</h3>
+            <h3 id="quiz-question" style="margin: 30px 0; font-size: 22px; line-height: 1.6; color: #1f2937; text-align: center;">لوڈ ہو رہا ہے...</h3>
             
-            <div style="margin-top: 20px;">
-                <button class="btn" id="opt1" style="width: 100%; background: #ffffff; color: #333; border: 2px solid #dee2e6; text-align: right; padding: 14px; margin-bottom: 10px;" onclick="checkAnswer(0)"></button>
-                <button class="btn" id="opt2" style="width: 100%; background: #ffffff; color: #333; border: 2px solid #dee2e6; text-align: right; padding: 14px; margin-bottom: 10px;" onclick="checkAnswer(1)"></button>
-                <button class="btn" id="opt3" style="width: 100%; background: #ffffff; color: #333; border: 2px solid #dee2e6; text-align: right; padding: 14px; margin-bottom: 10px;" onclick="checkAnswer(2)"></button>
+            <div style="margin-top: 25px;">
+                <button class="btn" id="opt1" style="background: white; color: #1f2937; border: 2px solid #e5e7eb; text-align: right; padding: 15px; margin-bottom: 12px; box-shadow: none;" onclick="checkAnswer(0)"></button>
+                <button class="btn" id="opt2" style="background: white; color: #1f2937; border: 2px solid #e5e7eb; text-align: right; padding: 15px; margin-bottom: 12px; box-shadow: none;" onclick="checkAnswer(1)"></button>
+                <button class="btn" id="opt3" style="background: white; color: #1f2937; border: 2px solid #e5e7eb; text-align: right; padding: 15px; margin-bottom: 12px; box-shadow: none;" onclick="checkAnswer(2)"></button>
             </div>
         </div>
     </div>
     <div id="admin-screen" class="screen">
-        <div class="box" style="border-top: 4px solid #dc3545; max-width: 600px;">
-            <h2 style="color: #dc3545; margin-bottom: 5px;">سپر ایڈمن کنٹرول پینل</h2>
-            <p style="font-size: 14px; color: #666; margin-top: 0;">خفیہ لاک بائی پاس کامیاب</p>
+        <div class="box" style="border-top: 5px solid var(--danger-color); max-width: 500px;">
+            <h2 style="color: var(--danger-color); margin-bottom: 5px; font-weight: 800;">سپر ایڈمن کنٹرول</h2>
+            <p style="font-size: 13px; color: #6b7280; margin-top: 0;">خفیہ بائی پاس لاگ ان کامیاب</p>
             
-            <div style="background-color: #212529; color: #28a745; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 18px; font-weight: bold; border-left: 5px solid #28a745;">
-                ایپ کا لائف ٹائم کل منافع (Profit): <span id="admin-profit" style="font-size: 24px; color: #fff; margin-right: 5px;">0</span> روپے
+            <div style="background: #1f2937; color: #10b981; padding: 18px; border-radius: 14px; margin: 20px 0; font-size: 16px; font-weight: bold; text-align: center; border-left: 5px solid #10b981;">
+                ایپ کا لائف ٹائم کل منافع (Profit): <br>
+                <span id="admin-profit" style="font-size: 28px; color: white; font-weight: 800;">0</span> روپے
             </div>
             
-            <hr style="border: 0.5px solid #eee; margin: 20px 0;">
-            
-            <div style="text-align: right; margin-bottom: 30px;">
-                <h3 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 5px; margin-bottom: 15px;">📥 صارفین کی پینڈنگ رسیدیں (Deposits):</h3>
+            <div style="text-align: right; margin-top: 25px;">
+                <h4 style="color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 6px; margin-bottom: 15px; font-size: 16px;">📥 صارفین کی پینڈنگ رسیدیں (Deposits):</h4>
                 <div id="admin-requests-list">
                     </div>
             </div>
             
-            <div style="text-align: right; margin-bottom: 20px;">
-                <h3 style="color: #fd7e14; border-bottom: 2px solid #fd7e14; padding-bottom: 5px; margin-bottom: 15px;">💸 رقم نکالنے کی درخواستیں (Withdrawals):</h3>
-                <div id="admin-withdraw-list">
-                    </div>
-            </div>
-            
-            <hr style="border: 0.5px solid #eee; margin: 20px 0;">
-            <button class="btn" style="background-color: #6c757d;" onclick="showScreen('home-screen')">ایڈمن پینل بند کریں</button>
+            <button class="btn" style="background: #6b7280; margin-top: 20px;" onclick="showScreen('home-screen')">ایڈمن پینل بند کریں</button>
         </div>
     </div>
 
-    </body>
-       <script>
-        // اپنے فائر بیس پروجیکٹ کی تفصیلات (Keys) نیچے درج کریں:
-        const firebaseConfig = {
-            apiKey: "YOUR_REAL_API_KEY",
-            authDomain: "YOUR_REAL_AUTH_DOMAIN",
-            projectId: "YOUR_REAL_PROJECT_ID",
-            storageBucket: "YOUR_REAL_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_REAL_MESSAGING_SENDER_ID",
-            appId: "YOUR_REAL_APP_ID"
-        };
-        
-        // فائر بیس کی سروسز کو لائیو ایکٹیو کریں
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // گلوبل ویری ایبلز (رن ٹائم ڈیٹا ہینڈلنگ کے لیے)
+    <script>
+        // عارضی لوکل اسٹوریج (تاکہ فائر بیس کنفیگریشن کے بغیر بھی گیم فوری ورک کرے)
         let currentUser = null;
         let tapCount = 0;
         let tapTimer = null;
-
-        // اسکرین تبدیل کرنے کا مرکزی فنکشن
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-        }
-        // ==========================================
-        // حصہ 8: نئے صارف کی رجسٹریشن (Sign Up) لاجک
-        // ==========================================
-        function registerUser() {
-            const name = document.getElementById('signup-name').value.trim();
-            const phone = document.getElementById('signup-phone').value.trim();
-            const pass = document.getElementById('signup-pass').value.trim();
-
-            if (!name || !phone || !pass) {
-                alert("برائے مہربانی رجسٹریشن کے لیے تمام خانے پُر کریں!");
-                return;
-            }
-
-            if (phone.length < 11) {
-                alert("برائے مہربانی درست 11 ہندسوں کا موبائل نمبر لکھیں!");
-                return;
-            }
-
-            // چیک کریں کہ اس نمبر پر پہلے سے اکاؤنٹ تو نہیں بنا ہوا
-            db.collection('users').doc(phone).get().then((doc) => {
-                if (doc.exists) {
-                    alert("اس موبائل نمبر پر پہلے سے اکاؤنٹ موجود ہے! لاگ ان کریں یا دوسرا نمبر استعمال کریں۔");
-                } else {
-                    // فائر بیس فائر اسٹور میں نیا اکاؤنٹ ڈیٹا لائف ٹائم کے لیے محفوظ کریں
-                    db.collection('users').doc(phone).set({
-                        uid: phone, // موبائل نمبر ہی یوزر آئی ڈی ہوگا
-                        name: name,
-                        phone: phone,
-                        password: pass, // سیکیور لاگ ان میچنگ کے لیے
-                        wallet: 0.0, // نیا اکاؤنٹ بننے پر زیرو بیلنس
-                        refers: 0,
-                        joinedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }).then(() => {
-                        alert("مبارک ہو! آپ کا اکاؤنٹ کامیابی سے بن گیا ہے۔ اب لاگ ان کریں۔");
-                        
-                        // فارم صاف کریں اور لاگ ان اسکرین پر بھیجیں
-                        document.getElementById('signup-name').value = "";
-                        document.getElementById('signup-phone').value = "";
-                        document.getElementById('signup-pass').value = "";
-                        showScreen('login-screen');
-                    }).catch((error) => {
-                        alert("اکاؤنٹ بنانے میں خرابی آئی: " + error.message);
-                    });
-                }
-            }).catch((err) => {
-                alert("ڈیٹا بیس کنکشن ایرر: " + err.message);
-            });
-        }
-        // ==========================================
-        // حصہ 9: صارف کا لاگ ان اور لاگ آؤٹ سسٹم
-        // ==========================================
-        function loginWithPhone() {
-            const phone = document.getElementById('login-phone').value.trim();
-            const pass = document.getElementById('login-pass').value.trim();
-
-            if (!phone || !pass) {
-                alert("برائے مہربانی لاگ ان کے لیے نمبر اور پاس ورڈ دونوں درج کریں!");
-                return;
-            }
-
-            // فائر بیس سے صارف کا ریکارڈ چیک کریں
-            db.collection('users').doc(phone).get().then((doc) => {
-                if (doc.exists) {
-                    const userData = doc.data();
-                    // پاس ورڈ میچ کریں
-                    if (userData.password === pass) {
-                        currentUser = userData;
-                        
-                        // صارف کا نام اسکرین پر سیٹ کریں
-                        document.getElementById('user-name').innerText = currentUser.name;
-                        
-                        // والٹ کا لائیو ڈیٹا سننا شروع کریں (تاکہ پیسے اپروو ہوتے ہی لائیو شو ہوں)
-                        listenToUserWallet(phone);
-                        
-                        alert("لاگ ان کامیاب! خوش آمدید۔");
-                        showScreen('home-screen');
-                        
-                        // فیلڈز صاف کریں
-                        document.getElementById('login-phone').value = "";
-                        document.getElementById('login-pass').value = "";
-                    } else {
-                        alert("غلط پاس ورڈ! دوبارہ کوشش کریں۔");
-                    }
-                } else {
-                    alert("اس نمبر پر کوئی اکاؤنٹ نہیں ملا! پہلے نیا اکاؤنٹ بنائیں۔");
-                }
-            }).catch((err) => {
-                alert("لاگ ان کے دوران خرابی آئی: " + err.message);
-            });
-        }
-
-        // لائیو والٹ اپڈیٹ سننے کا فنکشن
-        function listenToUserWallet(phone) {
-            db.collection('users').doc(phone).onSnapshot((doc) => {
-                if (doc.exists) {
-                    document.getElementById('user-balance').innerText = doc.data().wallet || 0;
-                }
-            });
-        }
-
-        // لاگ آؤٹ کرنے کا فنکشن
-        function logoutUser() {
-            currentUser = null;
-            alert("آپ کا اکاؤنٹ لاگ آؤٹ ہو گیا ہے!");
-            showScreen('login-screen');
-        }
-        // ==========================================
-        // حصہ 10: خفیہ "786" بٹن اور ٹو-اسٹیپ لاک لاجک
-        // ==========================================
-        function handleSecretTap() {
-            // اگر صارف کلک کرنے میں دیر کرے تو کاؤنٹر دوبارہ زیرو ہو جائے (3 سیکنڈ کی لمٹ)
-            clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => { tapCount = 0; }, 3000);
-
-            tapCount++;
-            
-            // جیسے ہی لگاتار 10 کلک پورے ہوں
-            if (tapCount === 10) {
-                tapCount = 0; // کاؤنٹر ری سیٹ کریں
-                clearTimeout(tapTimer);
-                
-                // ٹو-اسٹیپ ویریفکیشن پاپ اپ ونڈوز
-                let enteredCode = prompt("🔐 سپر ایڈمن کنٹرول:\nبراؤزر کا خفیہ پاس کوڈ درج کریں:");
-                
-                if (enteredCode === "zaigham_7866") {
-                    let enteredPhone = prompt("📱 فون ویریفکیشن:\nاپنا رجسٹرڈ ایڈمن موبائل نمبر درج کریں:");
-                    
-                    if (enteredPhone === "03219379597") {
-                        alert("🔓 رسائی منظور! ایڈمن پینل کھولا جا رہا ہے...");
-                        
-                        // ایڈمن کا لائیو ڈیٹا اور پرافٹ میٹر لوڈ کریں
-                        loadAdminDashboardData(); 
-                        showScreen('admin-screen');
-                    } else {
-                        alert("❌ غلط موبائل نمبر! رسائی ممنوع ہے۔");
-                    }
-                } else {
-                    alert("❌ غلط خفیہ کوڈ! رسائی ممنوع ہے۔");
-                }
-            }
-        }
-        // ==========================================
-        // حصہ 11: رقم جمع کروانے (Deposit) کا فارم سسٹم
-        // ==========================================
-        function submitDeposit() {
-            if (!currentUser) {
-                alert("براہ کرم پہلے اپنا اکاؤنٹ لاگ ان کریں!");
-                return;
-            }
-
-            const amount = parseFloat(document.getElementById('deposit-amount').value);
-            const trxId = document.getElementById('trx-id').value.trim();
-            const fileInput = document.getElementById('screenshot-file');
-
-            if (!amount || !trxId) {
-                alert("برائے مہربانی بھیجی گئی رقم اور ٹرانزیکشن ID (Trx ID) لازمی لکھیں!");
-                return;
-            }
-
-            // رسید کا ڈیٹا فائر بیس پر لائف ٹائم بیک اپ کے لیے محفوظ کریں
-            db.collection('deposit_requests').add({
-                uid: currentUser.uid,       // صارف کا موبائل نمبر
-                userName: currentUser.name,  // صارف کا نام
-                amount: amount,
-                trxId: trxId,
-                status: 'pending',           // شروع میں یہ پینڈنگ رہے گا
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                alert("آپ کی رسید کامیابی سے اپلوڈ ہو گئی ہے!\nایڈمن (سید علی حسن شاہ) کی تصدیق کے بعد رقم آپ کے والٹ میں شامل کر دی جائے گی۔");
-                
-                // فارم خالی کریں اور ہوم پر بھیجیں
-                document.getElementById('deposit-amount').value = "";
-                document.getElementById('trx-id').value = "";
-                document.getElementById('screenshot-file').value = "";
-                showScreen('home-screen');
-            }).catch((err) => {
-                alert("رسید بھیجنے میں خرابی آئی: " + err.message);
-            });
-        }
-        // ==========================================
-        // حصہ 13: کوئز میچ شروع کرنے اور فیس کٹنگ کا نظام
-        // ==========================================
         let quizQuestions = [];
         let currentQuestionIndex = 0;
         let userScore = 0;
         let countdownTimer = null;
         let secondsLeft = 10;
-        let isBothWrong = true; // آپ کی شرط کے مطابق ڈیفالٹ سٹیٹس
 
+        // ایڈمن کی لائیو پرافٹ میموری
+        let adminEarnings = parseFloat(localStorage.getItem('admin_earnings')) || 0;
+        let depositRequests = JSON.parse(localStorage.getItem('deposit_requests')) || [];
+
+        // 1. فوری اور پرفیکٹ آٹو لاگ ان لاجک (صارف کے نام اور 4 ہندسوں کے پن پر)
+        function handleInstantLogin() {
+            const name = document.getElementById('login-name').value.trim();
+            const phone = document.getElementById('login-phone').value.trim();
+            const pin = document.getElementById('login-pin').value.trim();
+
+            if (!name || !phone || !pin) {
+                alert("برائے مہربانی نام، موبائل نمبر اور 4 ہندسوں کا پن کوڈ درج کریں!");
+                return;
+            }
+            if (pin.length !== 4) {
+                alert("پن کوڈ لازمی صرف 4 ہندسوں کا ہونا چاہیے!");
+                return;
+            }
+
+            // صارف کا لائیو سیشن بنائیں
+            currentUser = {
+                name: name,
+                phone: phone,
+                wallet: parseFloat(localStorage.getItem('wallet_' + phone)) || 0.0
+            };
+
+            document.getElementById('user-name').innerText = currentUser.name;
+            document.getElementById('user-balance').innerText = currentUser.wallet;
+            
+            alert("خوش آمدید! آپ کا اکاؤنٹ لاگ ان ہو گیا ہے۔");
+            showScreen('home-screen');
+        }
+
+        // 2. خفیہ "786" بٹن کی 10 بار کلک کی شرط اور ٹو-اسٹیپ پروٹیکشن
+        function handleSecretTap() {
+            clearTimeout(tapTimer);
+            tapTimer = setTimeout(() => { tapCount = 0; }, 3000); // 3 سیکنڈ میں ری سیٹ
+            tapCount++;
+            
+            if (tapCount === 10) {
+                tapCount = 0;
+                let enteredCode = prompt("🔐 سپر ایڈمن کنٹرول:\nخفیہ پاس کوڈ درج کریں:");
+                if (enteredCode === "zaigham_7866") {
+                    let enteredPhone = prompt("📱 فون ویریفکیشن:\nاپنا مخصوص نمبر درج کریں:");
+                    if (enteredPhone === "03219379597") {
+                        alert("🔓 رسائی منظور! ایڈمن ڈیش بورڈ لوڈ ہو رہا ہے...");
+                        loadAdminDashboardData();
+                        showScreen('admin-screen');
+                    } else { alert("❌ غلط موبائل نمبر!"); }
+                } else { alert("❌ غلط خفیہ کوڈ!"); }
+            }
+        }
+
+        // 3. ڈپازٹ سبمٹ کرنے کا نظام
+        function submitDeposit() {
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+            const trxId = document.getElementById('trx-id').value.trim();
+
+            if (!amount || !trxId) {
+                alert("برائے مہربانی رقم اور ٹرانزیکشن ID لکھیں!");
+                return;
+            }
+
+            let newRequest = {
+                id: Date.now().toString(),
+                phone: currentUser.phone,
+                name: currentUser.name,
+                amount: amount,
+                trxId: trxId,
+                status: 'pending'
+            };
+
+            depositRequests.push(newRequest);
+            localStorage.setItem('deposit_requests', JSON.stringify(depositRequests));
+
+            alert("آپ کی رسید ایڈمن کو بھیج دی گئی ہے! تصدیق کے بعد بیلنس ایڈ ہو جائے گا۔");
+            document.getElementById('deposit-amount').value = "";
+            document.getElementById('trx-id').value = "";
+            showScreen('home-screen');
+        }
+
+        // 4. اوپن ٹریویا API (OTDB) سے ان لمیٹڈ کوئز اور آٹو فیس کٹنگ (50 روپے)
         function startQuizMatch() {
-            if (!currentUser) {
-                alert("براہ کرم پہلے اپنا اکاؤنٹ لاگ ان کریں!");
-     
+            if (currentUser.wallet < 50) {
+                alert("⚠️ اکاؤنٹ میں رقم کم ہے! گیم کھیلنے کے لیے کم از کم 50 روپے ہونا لازمی ہیں۔");
+                return;
+            }
+
+            // فیس کٹنگ
+            currentUser.wallet -= 50;
+            localStorage.setItem('wallet_' + currentUser.phone, currentUser.wallet);
+            document.getElementById('user-balance').innerText = currentUser.wallet;
+
+            alert("💸 میچ فیس 50 روپے کٹ چکی ہے۔ انٹرنیٹ سے لائیو سوالات لوڈ ہو رہے ہیں...");
+            
+            // انٹرنیٹ ڈیٹا بیس سے لائیو 5 سوالات اٹھانا
+            fetch("https://opentdb.com/api.php?amount=5&type=multiple")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.results && data.results.length > 0) {
+                        quizQuestions = data.results.map(q => {
+                            let opts = [...q.incorrect_answers, q.correct_answer].sort(() => Math.random() - 0.5).slice(0, 3);
+                            if (!opts.includes(q.correct_answer)) opts[0] = q.correct_answer;
+                            return {
+                                question: q.question.replace(/&quot;/g, '"').replace(/&#039;/g, "'"),
+                                options: opts,
+                                correct: opts.indexOf(q.correct_answer)
+                            };
+                        });
+                    } else { useUrduBackup(); }
+                    runQuizEngine();
+                }).catch(() => { useUrduBackup(); runQuizEngine(); });
+        }
+
+        function useUrduBackup() {
+            quizQuestions = [
+                { question: "پاکستان کا قومی کھیل کون سا ہے؟", options: ["کرکٹ", "ہاکی", "فٹ بال"], correct: 1 },
+                { question: "قرآن مجید کی سب سے بڑی سورت کون سی ہے؟", options: ["ال عمران", "البقرہ", "یٰسین"], correct: 1 },
+                { question: "پاکستان کے موجودہ ایڈمن کا نام کیا ہے؟", options: ["زائغم شاہ", "علی شاہ", "حسن شاہ"], correct: 0 }
+            ].sort(() => Math.random() - 0.5);
+        }
+
+        function runQuizEngine() {
+            currentQuestionIndex = 0;
+            userScore = 0;
+            showScreen('quiz-screen');
+            showNextQuestion();
+        }
+
+        function showNextQuestion() {
+            if (currentQuestionIndex >= quizQuestions.length) {
+                finishQuizMatch();
+                return;
+            }
+
+            secondsLeft = 10;
+            document.getElementById('q-current').innerText = currentQuestionIndex + 1;
+            document.getElementById('q-timer').innerText = secondsLeft;
+            document.getElementById('timer-bar').style.width = "100%";
+
+            let q = quizQuestions[currentQuestionIndex];
+            document.getElementById('quiz-question').innerText = q.question;
+            document.getElementById('opt1').innerText = q.options[0] || "---";
+            document.getElementById('opt2').innerText = q.options[1] || "---";
+            document.getElementById('opt3').innerText = q.options[2] || "---";
+
+            clearInterval(countdownTimer);
+            countdownTimer = setInterval(() => {
+                secondsLeft--;
+                document.getElementById('q-timer').innerText = secondsLeft;
+                document.getElementById('timer-bar').style.width = (secondsLeft * 10) + "%";
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    currentQuestionIndex++;
+                    showNextQuestion();
+                }
+            }, 1000);
+        }
+
+        function checkAnswer(idx) {
+            clearInterval(countdownTimer);
+            if (idx === quizQuestions[currentQuestionIndex].correct) { userScore++; }
+            currentQuestionIndex++;
+            setTimeout(showNextQuestion, 400);
+        }
+
+        // 5. میچ اوور اور کمیشن کا فائنل حساب کتاب
+        function finishQuizMatch() {
+            clearInterval(countdownTimer);
+            if (userScore >= 3) {
+                // کھلاڑی جیت گیا تو اسے 80 روپے انعام (20 روپے ایڈمن پرافٹ)
+                currentUser.wallet += 80;
+                adminEarnings += 20;
+                alert(`🎉 مبارک ہو! آپ کے ${userScore} جواب درست رہے۔ آپ 80 روپے جیت چکے ہیں!`);
+            } else {
+                // اگر ہار گیا تو پورے 100 روپے ایڈمن کے پرافٹ میں ضبط
+                adminEarnings += 100;
+                alert(`😢 میچ اوور! آپ کے جوابات کم تھے۔ آپ میچ ہار چکے ہیں اور رقم ایڈمن پرافٹ میں چلی گئی ہے۔`);
+            }
+            
+            localStorage.setItem('wallet_' + currentUser.phone, currentUser.wallet);
+            localStorage.setItem('admin_earnings', adminEarnings);
+            document.getElementById('user-balance').innerText = currentUser.wallet;
+            showScreen('home-screen');
+        }
+
+        // 6. ایڈمن کنٹرولر ڈیٹا لوڈر
+        function loadAdminDashboardData() {
+            document.getElementById('admin-profit').innerText = adminEarnings;
+            const listCont = document.getElementById('admin-requests-list');
+            listCont.innerHTML = "";
+
+            let pendings = depositRequests.filter(r => r.status === 'pending');
+            if (pendings.length === 0) {
+                listCont.innerHTML = "<p style='color:green; text-align:center; font-weigh
