@@ -3,6 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mega Quiz & Win</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .main-title {
+            color: #4f46e5;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .sub-title {
+            color: #1d4ed8;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .instruction {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 25px;
+            direction: rtl;
+            line-height: 1.6;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: right;
+            direction: rtl;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            background: #4338ca;
+        }
+
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h1 class="main-title">Mega Quiz</h1>
+        <h2 class="sub-title">& Earn Online</h2>
+        
+        <p class="instruction">صرف نام، موبائل نمبر اور 4 ہندسوں کا پن کوڈ لکھ کر فوری لاگ ان کریں۔</p>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">آپ کا پورا نام:</label>
+                <input type="text" id="username" placeholder="یہاں اپنا نام لکھیں" required>
+            </div>
+
+            <div class="input-group">
+                <label for="mobile">موبائل نمبر:</label>
+                <input type="tel" id="mobile" placeholder="03xxxxxxxxx" pattern="[0-9]{11}" required>
+            </div>
+
+            <div class="input-group">
+                <label for="pin">4 ہندسوں کا خفیہ پن (PIN Code):</label>
+                <input type="password" id="pin" maxlength="4" inputmode="numeric" placeholder="••••" required>
+            </div>
+
+            <button type="submit" class="login-btn">لاگ ان کریں</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // پیج کو ریفریش ہونے سے روکنے کے لیے
+
+            // ان پٹ فیلڈز سے ڈیٹا حاصل کرنا
+            const username = document.getElementById('username').value.trim();
+            const mobile = document.getElementById('mobile').value.trim();
+            const pin = document.getElementById('pin').value.trim();
+
+            // پن کوڈ کی ویلیڈیشن (چیک کرنا کہ 4 ہندسے ہیں یا نہیں)
+            if (pin.length !== 4 || isNaN(pin)) {
+                alert('براہ کرم درست 4 ہندسوں کا پن کوڈ درج کریں۔');
+                return;
+            }
+
+            // لاگ ان کامیاب ہونے کی صورت میں اگلا ایکشن
+            alert('لاگ ان کامیاب! خوش آمدید، ' + username);
+            
+            // نوٹ: یہاں آپ اپنے اگلے پیج (جہاں گیم شروع ہونی ہے) کا لنک دیں
+            // window.location.href = "quiz_game.html"; 
+        });
+    </script>
+
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zaigham Gaming Area</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
