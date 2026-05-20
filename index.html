@@ -1,996 +1,804 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1749164574271353" crossorigin="anonymous"></script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>Smart Humanizer | Undetectable AI to Human Text Converter</title>
-    <meta name="description" content="Free AI to Human text converter. Bypass AI detection from ChatGPT & Gemini. Trusted by USA students and professionals.">
-    <meta name="keywords" content="AI Humanizer, Bypass ChatGPT detection, Free AI text converter, Undetectable AI, USA AI Tools">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    
-    <script type='text/javascript' src='//pl28669954.effectivegatecpm.com/a8/c5/1f/a8c51ff9b48d328b1e1031f9639a0710.js'></script>
+// ==========================================
+// PART 1: main.dart & Authentication
+// ==========================================
 
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .gradient-bg { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
-        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        #live-counter { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-    </style>
-</head>
-<body>
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 
-    <div class="w-full bg-gray-900 text-white py-2 px-4 flex justify-between items-center text-xs md:text-sm font-medium">
-        <div class="flex items-center gap-4">
-            <span id="live-clock" class="text-blue-400">Loading Time...</span>
-            <span class="hidden md:inline border-l border-gray-700 h-4 mx-2"></span>
-            <span class="flex items-center gap-1">
-                <span id="live-counter" class="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span id="user-count">1,248</span> Users Online
-            </span>
-        </div>
-        <div class="hidden sm:block text-gray-400 uppercase tracking-widest text-[10px]">
-            USA Server: Active ⚡
-        </div>
-    </div>
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // فائر بیس کا بیک اپ لائیو کرنے کے لیے
+  runApp(const QuizApp());
+}
 
-    <header class="glass-effect sticky top-0 z-50 border-b border-gray-200 shadow-sm">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="bg-blue-600 p-2 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                </div>
-                <span class="text-xl md:text-2xl font-extrabold text-gray-900 tracking-tight">Smart<span class="text-blue-600">Humanizer</span></span>
-            </div>
-            
-            <nav class="hidden md:flex gap-6 text-sm font-semibold text-gray-600">
-                <a href="#" class="hover:text-blue-600 transition">Home</a>
-                <a href="#features" class="hover:text-blue-600 transition">How it Works</a>
-                <a href="https://wa.me/923219379597" target="_blank" class="text-green-600 hover:text-green-700">Expert Support</a>
-            </nav>
-        </div>
-    </header>
+class QuizApp extends StatelessWidget {
+  const QuizApp({super.key});
 
-    <script>
-        // Real-time Clock (12-hour AM/PM)
-        function updateClock() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-            document.getElementById('live-clock').innerText = "Local Time: " + timeString;
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Zaigham Skill Quiz',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      // چیک کریں گے کہ بندہ پہلے سے لاگ ان ہے یا نہیں
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return const HomeScreen();
+          }
+          return const LoginScreen();
+        },
+      ),
+    );
+  }
+}
+
+// 1. جی میل لاگ ان اسکرین
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
+
+  Future<void> signInWithGoogle(BuildContext context) async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // گوگل سے لاگ ان کریں
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      User? user = userCredential.user;
+
+      if (user != null) {
+        // صارف کا ڈیٹا جی میل کے بیک اپ (Firestore) پر لائف ٹائم کے لیے سیو کریں
+        DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+        DocumentSnapshot doc = await userRef.get();
+
+        if (!doc.exists) {
+          await userRef.set({
+            'uid': user.uid,
+            'name': user.displayName,
+            'email': user.email,
+            'photo': user.photoURL,
+            'wallet': 0.0, // نیا اکاؤنٹ بننے پر زیرو بیلنس
+            'refers': 0,
+            'joinedAt': DateTime.now(),
+          });
         }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // Random Live User Counter
-        setInterval(() => {
-            const base = 1200;
-            const random = Math.floor(Math.random() * 100);
-            document.getElementById('user-count').innerText = (base + random).toLocaleString();
-        }, 3000);
-    </script>
-    <main class="container mx-auto px-4 py-10">
-        
-        <div class="flex justify-center mb-8">
-            <script type="text/javascript">
-                atOptions = { 'key' : '42af78b9072b82f5af0a86e82e8ee015', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
-            </script>
-            <script type="text/javascript" src="//www.highperformanceformat.com/42af78b9072b82f5af0a86e82e8ee015/invoke.js"></script>
-        </div>
-
-        <div class="max-w-5xl mx-auto grid lg:grid-cols-3 gap-8">
-            
-            <div class="hidden lg:block">
-                <div class="sticky top-24 bg-white p-2 rounded-xl shadow-sm border border-gray-100">
-                    <p class="text-[10px] text-gray-400 text-center mb-1 uppercase tracking-widest">Sponsored</p>
-                    <script type="text/javascript">
-                        atOptions = { 'key' : '4f3495621bdcda3f8eaa1d9ef89d2a61', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };
-                    </script>
-                    <script type="text/javascript" src="//www.highperformanceformat.com/4f3495621bdcda3f8eaa1d9ef89d2a61/invoke.js"></script>
-                </div>
-            </div>
-
-            <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-blue-50 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-green-400"></div>
-                    
-                    <h1 class="text-2xl md:text-3xl font-extrabold text-gray-800 mb-2">Transform AI to Human Text</h1>
-                    <p class="text-gray-500 text-sm mb-6">Bypass all AI detectors with our advanced neural rewriting engine.</p>
-
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <button onclick="pasteText()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
-                            📋 <span>Paste</span>
-                        </button>
-                        
-                        <button onclick="humanizeNow()" id="goBtn" class="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-6 rounded-xl shadow-lg shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95">
-                            🚀 <span>GO / START</span>
-                        </button>
-
-                        <button onclick="copyText()" class="flex-1 bg-green-50 text-green-700 hover:bg-green-100 font-bold py-3 px-4 rounded-xl border border-green-200 flex items-center justify-center gap-2 transition-all active:scale-95">
-                            ✂️ <span>Copy</span>
-                        </button>
-                    </div>
-
-                    <div class="grid gap-4">
-                        <textarea id="inputText" class="w-full h-48 p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-gray-700 resize-none" placeholder="Enter or paste your AI text here..."></textarea>
-                        
-                        <div id="progress-container" class="hidden space-y-2 mt-2">
-                            <div class="flex justify-between text-xs font-bold text-blue-600 uppercase tracking-tighter">
-                                <span id="meter-text">Humanizing...</span>
-                                <span id="progress-percent">0%</span>
-                            </div>
-                            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden border border-gray-200">
-                                <div id="progress-bar" class="bg-gradient-to-r from-blue-600 to-green-500 h-full transition-all duration-300" style="width: 0%"></div>
-                            </div>
-                        </div>
-
-                        <textarea id="outputText" class="w-full h-48 p-4 bg-blue-50/30 border border-blue-100 rounded-2xl text-gray-800 outline-none resize-none" readonly placeholder="Your human-written text will appear here..."></textarea>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-    <div class="container mx-auto px-4 py-6 space-y-8">
-        
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <p class="text-[10px] text-gray-400 text-center mb-2 uppercase tracking-widest italic">Content for You</p>
-            <script async="async" data-cfasync="false" src="//pl28669945.effectivegatecpm.com/5905b2fc9507c51fa53a719f7d356937/invoke.js"></script>
-            <div id="container-5905b2fc9507c51fa53a719f7d356937"></div>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-4">
-            <div class="flex justify-center bg-gray-50 p-2 rounded-xl border">
-                <script type="text/javascript">
-                    atOptions = { 'key' : '1792312d652531861c4e4aae1bbe38aa', 'format' : 'iframe', 'height' : 50, 'width' : 320, 'params' : {} };
-                </script>
-                <script type="text/javascript" src="//www.highperformanceformat.com/1792312d652531861c4e4aae1bbe38aa/invoke.js"></script>
-            </div>
-
-            <div class="flex justify-center bg-gray-50 p-2 rounded-xl border">
-                <script type="text/javascript">
-                    atOptions = { 'key' : '4f1ba60f6c6977b87cd67e5b60ff73fe', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
-                </script>
-                <script type="text/javascript" src="//www.highperformanceformat.com/4f1ba60f6c6977b87cd67e5b60ff73fe/invoke.js"></script>
-            </div>
-        </div>
-    </div>
-
-    <footer class="bg-white border-t border-gray-200 pt-12 pb-6 mt-10">
-        <div class="container mx-auto px-4">
-            <div class="grid md:grid-cols-3 gap-8 mb-8 text-center md:text-left">
-                <div>
-                    <h3 class="font-bold text-gray-900 mb-4">Smart Humanizer</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">
-                        The world's leading AI to human text converter. We help you create content that is 100% undetectable by AI scanners, ensuring quality and authenticity.
-                    </p>
-                </div>
-                <div>
-                    <h3 class="font-bold text-gray-900 mb-4">Quick Links</h3>
-                    <ul class="text-sm text-gray-500 space-y-2">
-                        <li><a href="#" class="hover:text-blue-600">Privacy Policy</a></li>
-                        <li><a href="#" class="hover:text-blue-600">Terms of Service</a></li>
-                        <li><a href="#" class="hover:text-blue-600">Cookie Settings</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-gray-900 mb-4">AdSense Compliance</h3>
-                    <p class="text-[11px] text-gray-400 italic">
-                        This tool is for educational purposes. We encourage users to follow academic integrity guidelines. Google AdSense & Adsterra compliant.
-                    </p>
-                </div>
-            </div>
-            <div class="border-t pt-6 text-center text-xs text-gray-400">
-                &copy; 2026 Smart Humanizer Tool. All Rights Reserved. USA Servers.
-            </div>
-        </div>
-    </footer>
-
-    <a href="https://wa.me/923219379597?text=Hi, I need help with the Smart Humanizer tool!" target="_blank" class="fixed bottom-6 left-6 z-[60] bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl transition-all hover:scale-110 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
-            <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-5.584 6.591-5.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
-        </svg>
-    </a>
-    <div class="hidden xl:block">
-        <div class="fixed left-2 top-1/4 z-40">
-            <p class="text-[10px] text-gray-400 text-center uppercase">Ad</p>
-            <script type="text/javascript">
-                atOptions = { 'key' : '3a70f44ca9fd3d9406bfa972d0863953', 'format' : 'iframe', 'height' : 600, 'width' : 160, 'params' : {} };
-            </script>
-            <script type="text/javascript" src="//www.highperformanceformat.com/3a70f44ca9fd3d9406bfa972d0863953/invoke.js"></script>
-        </div>
-
-        <div class="fixed right-2 top-1/4 z-40">
-            <p class="text-[10px] text-gray-400 text-center uppercase">Ad</p>
-            <script type="text/javascript">
-                atOptions = { 'key' : '937b0cf25a2c46b6684bcb6db1c74b00', 'format' : 'iframe', 'height' : 300, 'width' : 160, 'params' : {} };
-            </script>
-            <script type="text/javascript" src="//www.highperformanceformat.com/937b0cf25a2c46b6684bcb6db1c74b00/invoke.js"></script>
-        </div>
-    </div>
-
-    <script>
-        // 1. Smart Paste: کلپ بورڈ سے ٹیکسٹ اٹھانے کے لیے
-        async function pasteText() {
-            try {
-                const text = await navigator.clipboard.readText();
-                document.getElementById('inputText').value = text;
-            } catch (err) {
-                alert("Please manually paste your text.");
-            }
-        }
-
-        // 2. Fast Copy: رزلٹ کاپی کرنے کے لیے
-        function copyText() {
-            const outputText = document.getElementById('outputText');
-            if (!outputText.value || outputText.value.includes("Analyzing")) return;
-            outputText.select();
-            document.execCommand('copy');
-            alert("Humanized text copied successfully!");
-        }
-
-        // 3. Humanize Logic (Neural Transformation)
-        function humanizeNow() {
-            const input = document.getElementById('inputText').value;
-            const output = document.getElementById('outputText');
-            const progressContainer = document.getElementById('progress-container');
-            const progressBar = document.getElementById('progress-bar');
-            const progressPercent = document.getElementById('progress-percent');
-
-            if (input.trim().length < 10) {
-                alert("Please enter at least 10 characters to transform.");
-                return;
-            }
-
-            // Start Meter
-            progressContainer.classList.remove('hidden');
-            let width = 0;
-            output.value = ""; // Clear output while processing
-
-            const interval = setInterval(() => {
-                if (width >= 100) {
-                    clearInterval(interval);
-                    applyAiLogic(input);
-                } else {
-                    width++;
-                    progressBar.style.width = width + '%';
-                    progressPercent.innerText = width + '%';
-                }
-            }, 30); // Speed of the meter
-        }
-
-        // 4. ChatGPT & Gemini Style Rewriting Logic
-        function applyAiLogic(text) {
-            let result = text;
-
-            // Advanced Replacements (Synonyms and sentence flow)
-            const dictionary = [
-                { regex: /\bFurthermore\b/g, human: ["In addition", "What's more", "Additionally"] },
-                { regex: /\bMoreover\b/g, human: ["Also", "Plus", "On top of that"] },
-                { regex: /\bIn conclusion\b/g, human: ["Overall", "To sum up", "Ultimately"] },
-                { regex: /\butilize\b/ig, human: ["use", "leverage", "apply"] },
-                { regex: /\bcommence\b/ig, human: ["start", "begin", "launch"] },
-                { regex: /\bfacilitates\b/ig, human: ["helps with", "makes easier", "enables"] },
-                { regex: /\bArtificial Intelligence\b/ig, human: ["smart systems", "advanced technology", "AI-driven solutions"] },
-                { regex: /\bimperative\b/ig, human: ["essential", "crucial", "very important"] }
-            ];
-
-            dictionary.forEach(item => {
-                result = result.replace(item.regex, () => item.human[Math.floor(Math.random() * item.human.length)]);
-            });
-
-            // Random Authenticity Score for USA Trust (97% - 99.9%)
-            const finalScore = (Math.random() * (99.9 - 97) + 97).toFixed(1);
-            
-            document.getElementById('outputText').value = result;
-            document.getElementById('meter-text').innerHTML = "AI Detected: 0% | <span class='text-green-600'>Human Score: " + finalScore + "%</span>";
-        }
-    </script>
-    <div id="ai-assistant" class="fixed bottom-6 right-6 z-[100]">
-        <button onclick="toggleChat()" class="gradient-bg text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 border-2 border-white">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-            <span class="ml-2 font-bold hidden md:inline text-sm">AI Support</span>
-        </button>
-
-        <div id="chat-window" class="hidden absolute bottom-20 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col transition-all transform scale-95 origin-bottom-right">
-            <div class="gradient-bg p-4 text-white font-bold flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
-                    <span>Smart Assistant</span>
-                </div>
-                <button onclick="toggleChat()" class="text-white hover:text-gray-200 text-xl">✕</button>
-            </div>
-            
-            <div id="chat-messages" class="h-64 p-4 overflow-y-auto text-sm space-y-4 bg-gray-50">
-                <div class="bg-blue-100 p-3 rounded-2xl rounded-tl-none text-blue-900 shadow-sm">
-                    Hello! I am your Smart AI assistant. How can I help you humanize your content today?
-                </div>
-            </div>
-
-            <div class="p-3 border-t bg-white flex gap-2">
-                <input type="text" id="user-input" class="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ask me anything...">
-                <button onclick="sendChatMessage()" class="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Direct Link Ad (Ad No. 2)
-        const adsterraDirectLink = "https://www.effectivegatecpm.com/s5ev5djn?key=339a3586f98fce185fe09ec12e478200";
-
-        // Open direct link once on first user interaction (Smart Earning)
-        document.body.addEventListener('click', function() {
-            if (!localStorage.getItem('adClicked')) {
-                window.open(adsterraDirectLink, '_blank');
-                localStorage.setItem('adClicked', 'true');
-            }
-        }, { once: true });
-
-        // AI Chat Functions
-        function toggleChat() {
-            const chat = document.getElementById('chat-window');
-            chat.classList.toggle('hidden');
-        }
-
-        function sendChatMessage() {
-            const input = document.getElementById('user-input');
-            const messages = document.getElementById('chat-messages');
-            const userText = input.value.trim().toLowerCase();
-
-            if (!userText) return;
-
-            // Display User Message
-            const userDiv = document.createElement('div');
-            userDiv.className = "bg-gray-200 p-3 rounded-2xl rounded-tr-none text-gray-800 self-end ml-8 shadow-sm";
-            userDiv.innerText = input.value;
-            messages.appendChild(userDiv);
-            input.value = "";
-
-            // Smart AI Logic Responses
-            setTimeout(() => {
-                const aiDiv = document.createElement('div');
-                aiDiv.className = "bg-blue-600 p-3 rounded-2xl rounded-tl-none text-white mr-8 shadow-md";
-                
-                let response = "That's a great question! Our tool uses neural networks to make AI text look 100% human. Try it out!";
-
-                if (userText.includes("free")) response = "Yes! Our Smart Humanizer is 100% free for everyone.";
-                else if (userText.includes("work")) response = "I rewrite AI content by changing syntax and using human-like synonyms.";
-                else if (userText.includes("safe")) response = "Your data is 100% safe. We do not store any of your text.";
-                else if (userText.includes("contact")) response = "You can contact our owner directly via the WhatsApp button on the left!";
-                
-                aiDiv.innerText = response;
-                messages.appendChild(aiDiv);
-                messages.scrollTop = messages.scrollHeight;
-            }, 800);
-        }
-    </script>
-    <section id="about-section" class="container mx-auto px-4 py-16 border-t border-gray-100 bg-white/50">
-        <div class="max-w-4xl mx-auto text-center space-y-8">
-            
-            <div class="w-full h-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center text-gray-400 text-sm italic mb-10">
-                [Google AdSense Recommended Placement]
-            </div>
-
-            <h2 class="text-3xl font-extrabold text-gray-900">Why Trust Smart Humanizer?</h2>
-            
-            <div class="grid md:grid-cols-2 gap-8 text-left">
-                <div class="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                    <h4 class="font-bold text-blue-600 mb-2">Our Mission</h4>
-                    <p class="text-sm text-gray-600 leading-relaxed">
-                        In an era of automated content, we aim to preserve the human touch. Our engine is specifically designed for the USA market, ensuring that the tone, grammar, and emotional intelligence of your text match native English speakers.
-                    </p>
-                </div>
-                
-                <div class="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                    <h4 class="font-bold text-green-600 mb-2">Privacy First</h4>
-                    <p class="text-sm text-gray-600 leading-relaxed">
-                        We take user privacy seriously. Unlike other tools, Smart Humanizer does not store your content on our servers. Your text is processed in real-time and remains 100% your property.
-                    </p>
-                </div>
-            </div>
-
-            <div class="mt-12 p-8 bg-gray-900 text-gray-300 rounded-3xl text-sm leading-relaxed text-left">
-                <h3 class="text-white font-bold text-lg mb-4 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Legal Disclaimer & Community Guidelines
-                </h3>
-                <p class="mb-4">
-                    Smart Humanizer is a stylistic enhancement tool. While our neural engine is trained to bypass AI detection (like GPTZero, Originality.ai, and Copyleaks), we strongly discourage the use of our tool for academic dishonesty or plagiarism.
-                </p>
-                <p>
-                    By using this website, you agree to our <strong>Community Guidelines:</strong> We do not allow the processing of harmful, hate-speech, or illegal content. We adhere to the <strong>Google Publisher Policies</strong> and the <strong>Digital Millennium Copyright Act (DMCA)</strong>. Our service is provided "as-is" for creative and professional writing assistance.
-                </p>
-            </div>
-
-            <div class="py-8">
-                <p class="text-[10px] text-gray-300 uppercase mb-2">Advertisement</p>
-                <div class="w-full bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <span class="text-gray-400 text-xs italic">Smart Contextual Ad Placement</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    </body>
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Smart Humanizer",
-      "url": "https://yourwebsite.com",
-      "description": "The best AI to Human text converter for USA students and writers.",
-      "applicationCategory": "EducationalApplication",
-      "operatingSystem": "All",
-      "author": {
-        "@type": "Person",
-        "name": "Smart Humanizer Team"
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("لاگ ان میں خرابی آئی: $e")),
+      );
     }
-    </script>
+  }
 
-    <script>
-        // ویب سائٹ کو گوگل میں تیزی سے لانے کے لیے وائرل ٹیگ لاجک
-        console.log("Smart Humanizer Engine: Active");
-        console.log("USA SEO Protocols: Applied");
-        
-        // یوزر کو روکنے کے لیے ایک چھوٹی سی ٹرک (Retention)
-        window.onbeforeunload = function() {
-            return "Are you sure you want to leave? Your humanized text might be lost!";
-        };
-    </script>
-<div class="fixed top-20 right-4 z-[60]">
-    <button onclick="toggleDarkMode()" id="dark-mode-btn" class="p-3 rounded-full bg-gray-200 text-gray-800 shadow-lg hover:bg-gray-300 transition-all">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path id="mode-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
-    </button>
-</div>
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16)),
+          icon: const Icon(Icons.login),
+          label: const Text("Gmail کے ذریعے لاگ ان کریں"),
+          onPressed: () => signInWithGoogle(context),
+        ),
+      ),
+    );
+  }
+}
 
-<style>
-    /* Dark Mode Global Styles */
-    .dark-theme { background-color: #0f172a !important; color: #f1f5f9 !important; }
-    .dark-theme .bg-white { background-color: #1e293b !important; color: #f1f5f9 !important; border-color: #334155 !important; }
-    .dark-theme .text-gray-900, .dark-theme .text-gray-800 { color: #f1f5f9 !important; }
-    .dark-theme .bg-gray-50, .dark-theme .bg-blue-50/30 { background-color: #0f172a !important; border-color: #334155 !important; }
-    .dark-theme textarea { background-color: #0f172a !important; color: #cbd5e1 !important; border-color: #334155 !important; }
-    
-    /* Mobile Responsive Buttons Fix */
-    @media (max-width: 640px) {
-        .flex-wrap button { font-size: 12px !important; padding: 10px 4px !important; }
+// 2. ہوم اسکرین اور خفیہ بٹن لاجک
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int tapCount = 0;
+  Timer? tapTimer;
+  double myBalance = 0.0;
+  String userId = FirebaseAuth.instance.currentUser?.uid ?? "";
+
+  @override
+  void initState() {
+    super.initState();
+    // فائر بیس سے لائیو بیلنس سنیں
+    FirebaseFirestore.instance.collection('users').doc(userId).snapshots().listen((doc) {
+      if (doc.exists && mounted) {
+        setState(() {
+          myBalance = (doc.data()?['wallet'] ?? 0.0).toDouble();
+        });
+      }
+    });
+  }
+
+  void handleSecretTap() {
+    // اگر 3 سیکنڈ میں دوبارہ کلک نہ کیا تو کاؤنٹر زیرو ہو جائے گا تاکہ عام لوگ نہ کھول سکیں
+    tapTimer?.cancel();
+    tapTimer = Timer(const Duration(seconds: 3), () {
+      tapCount = 0;
+    });
+
+    tapCount++;
+    if (tapCount == 10) {
+      tapCount = 0;
+      tapTimer?.cancel();
+      showSecretDialog();
     }
-</style>
+  }
 
-<script>
-    function toggleDarkMode() {
-        const body = document.body;
-        body.classList.toggle('dark-theme');
-        const isDark = body.classList.contains('dark-theme');
-        localStorage.setItem('darkMode', isDark);
-        
-        // Update Icon
-        const iconPath = document.getElementById('mode-icon');
-        if(isDark) {
-            iconPath.setAttribute('d', 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.95 16.95l.707.707M7.757 7.757l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z');
-        } else {
-            iconPath.setAttribute('d', 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z');
-        }
-    }
+  void showSecretDialog() {
+    final TextEditingController codeController = TextEditingController();
+    final TextEditingController phoneController = TextEditingController();
 
-    // Auto load user preference
-    if (localStorage.getItem('darkMode') === 'true') {
-        toggleDarkMode();
-    }
-
-</body>
-</html>
-</script>
-    <div class="container mx-auto px-4 py-10 border-t border-gray-100">
-        <div class="max-w-4xl mx-auto text-center">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Loved this tool? Share it with your friends!</h3>
-            <p class="text-sm text-gray-500 mb-6">Help others bypass AI detection and write better content.</p>
-            
-            <div class="flex flex-wrap justify-center gap-4">
-                <a href="https://www.facebook.com/sharer/sharer.php?u=https://yourwebsite.com" target="_blank" class="bg-[#1877F2] text-white px-6 py-2 rounded-full font-bold text-sm flex items-center gap-2 hover:opacity-90 transition shadow-md">
-                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                    Share
-                </a>
-
-                <a href="https://twitter.com/intent/tweet?text=Check out this amazing AI to Human Text Converter!&url=https://yourwebsite.com" target="_blank" class="bg-[#000000] text-white px-6 py-2 rounded-full font-bold text-sm flex items-center gap-2 hover:opacity-90 transition shadow-md">
-                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                    Post
-                </a>
-
-                <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://yourwebsite.com" target="_blank" class="bg-[#0A66C2] text-white px-6 py-2 rounded-full font-bold text-sm flex items-center gap-2 hover:opacity-90 transition shadow-md">
-                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.981 0 1.771-.773 1.771-1.729V1.729C24 .774 23.207 0 22.225 0z"/></svg>
-                    LinkedIn
-                </a>
-            </div>
-        </div>
-    </div>
-    <div id="notification-box" class="fixed bottom-24 left-6 z-[70] transform translate-y-20 opacity-0 transition-all duration-500 ease-in-out">
-        <div class="bg-white dark:bg-slate-800 border border-blue-100 dark:border-slate-700 shadow-2xl rounded-2xl p-4 flex items-center gap-4 max-w-xs">
-            <div class="relative">
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl">
-                    <span id="notify-initial">J</span>
-                </div>
-                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-            </div>
-            <div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 font-medium" id="notify-time">Just now</p>
-                <p class="text-sm font-bold text-gray-800 dark:text-white leading-tight" id="notify-text">
-                    Someone from USA humanized 450 words!
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const names = ["John", "Sarah", "Michael", "Emma", "David", "Olivia", "James", "Sophia", "Robert", "Isabella"];
-        const locations = ["New York, USA", "London, UK", "Toronto, Canada", "Sydney, Australia", "Texas, USA", "California, USA"];
-        const wordCounts = [250, 480, 1200, 350, 600, 900, 150, 2000];
-
-        function showNotification() {
-            const box = document.getElementById('notification-box');
-            const name = names[Math.floor(Math.random() * names.length)];
-            const location = locations[Math.floor(Math.random() * locations.length)];
-            const words = wordCounts[Math.floor(Math.random() * wordCounts.length)];
-            
-            // Update Content
-            document.getElementById('notify-initial').innerText = name.charAt(0);
-            document.getElementById('notify-text').innerHTML = `<span class="text-blue-600">${name}</span> from ${location} humanized <span class="text-green-600">${words} words!</span>`;
-            
-            // Show Animation
-            box.classList.remove('translate-y-20', 'opacity-0');
-            
-            // Hide after 5 seconds
-            setTimeout(() => {
-                box.classList.add('translate-y-20', 'opacity-0');
-            }, 5000);
-        }
-
-        // Start notifications after 10 seconds, then repeat every 25-40 seconds
-        setTimeout(() => {
-            showNotification();
-            setInterval(showNotification, Math.floor(Math.random() * (40000 - 25000) + 25000));
-        }, 10000);
-    </script>
-    <link rel="canonical" href="https://yourwebsite.com/" />
-    
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Smart Humanizer - Best AI to Human Text Converter">
-    <meta property="og:description" content="Convert AI text to human-like content for free. 100% undetectable and professional.">
-    <meta property="og:image" content="https://yourwebsite.com/logo-preview.png">
-    <meta property="og:url" content="https://yourwebsite.com/">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Smart Humanizer | AI Text Bypass">
-    <meta name="twitter:description" content="Make your AI content look human in one click.">
-
-    <script>
-        // Automatic Sitemap Ping Logic (Concept)
-        // یہ سکرپٹ گوگل کو بتاتی ہے کہ ویب سائٹ اپڈیٹ ہو گئی ہے
-        window.addEventListener('load', function() {
-            console.log("SEO Meta Tags: Successfully Injected");
-            console.log("Sitemap Status: Ready for Crawling");
-            
-            // وائرل ٹیگز جو بیک گراؤنڈ میں انڈیکسنگ میں مدد دیتے ہیں
-            const viralKeywords = ["AI bypasser", "ChatGPT to human", "AI detector remover", "Free humanizer tool"];
-            console.log("Active Keywords: " + viralKeywords.join(", "));
-        });
-
-        // Anti-Copy Logic (Optionally protect your own tool's text)
-        // اگر آپ چاہتے ہیں کہ لوگ آپ کا ٹیکسٹ آسانی سے چوری نہ کریں
-        /*
-        document.addEventListener('contextmenu', event => {
-            if (event.target.tagName !== 'TEXTAREA') event.preventDefault();
-        });
-        */
-    </script>
-
-    <div class="container mx-auto px-4 py-4 flex justify-center">
-        <div class="w-full max-w-4xl opacity-80 hover:opacity-100 transition-opacity">
-            <p class="text-[10px] text-gray-400 text-center mb-1">Sponsored Content</p>
-        </div>
-    </div>
-    <div class="max-w-5xl mx-auto px-4 mt-4">
-        <div class="flex flex-wrap gap-4 justify-center md:justify-start">
-            <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-full shadow-sm flex items-center gap-2">
-                <span class="text-blue-600 font-bold">Words:</span>
-                <span id="word-count" class="text-gray-700 dark:text-gray-200 font-medium">0</span>
-            </div>
-            
-            <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-full shadow-sm flex items-center gap-2">
-                <span class="text-green-600 font-bold">Characters:</span>
-                <span id="char-count" class="text-gray-700 dark:text-gray-200 font-medium">0</span>
-            </div>
-
-            <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-full shadow-sm flex items-center gap-2">
-                <span class="text-purple-600 font-bold">Reading Time:</span>
-                <span id="reading-time" class="text-gray-700 dark:text-gray-200 font-medium">0 min</span>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Real-time counter logic
-        const inputArea = document.getElementById('inputText');
-        const wordCountDisplay = document.getElementById('word-count');
-        const charCountDisplay = document.getElementById('char-count');
-        const readingTimeDisplay = document.getElementById('reading-time');
-
-        inputArea.addEventListener('input', () => {
-            const text = inputArea.value.trim();
-            
-            // Count Words
-            const words = text ? text.split(/\s+/).length : 0;
-            wordCountDisplay.innerText = words;
-
-            // Count Characters
-            charCountDisplay.innerText = text.length;
-
-            // Calculate Reading Time (Average 200 words per minute)
-            const minutes = Math.ceil(words / 200);
-            readingTimeDisplay.innerText = words > 0 ? minutes + " min" : "0 min";
-        });
-    </script>
-    <script>
-        let originalTitle = document.title;
-        let alertTimeout;
-
-        window.addEventListener('blur', () => {
-            // جب یوزر دوسری ٹیب پر جائے تو یہ میسج نظر آئے گا
-            alertTimeout = setTimeout(() => {
-                document.title = "⚠️ Don't forget! Your text is waiting...";
-            }, 3000);
-        });
-
-        window.addEventListener('focus', () => {
-            // جب یوزر واپس آئے تو ٹائٹل اصلی والا ہو جائے گا
-            clearTimeout(alertTimeout);
-            document.title = originalTitle;
-        });
-
-        // Extra Logic: اگر یوزر 30 سیکنڈ تک کچھ نہ کرے تو اسے "Copy" کی یاد دہانی کروانا
-        let idleTime = 0;
-        document.onmousemove = document.onkeypress = function() {
-            idleTime = 0;
-        };
-
-        setInterval(() => {
-            idleTime++;
-            if (idleTime > 60) { // 60 سیکنڈ بعد
-                const output = document.getElementById('outputText').value;
-                if(output && !output.includes("Your human-written")) {
-                    console.log("Reminder: Don't forget to copy your humanized text!");
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("خفیہ ایڈمن لاگ ان"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: codeController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: "خفیہ کوڈ ڈالیں"),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: "موبائل نمبر ڈالیں"),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                if (codeController.text.trim() == "zaigham_7866" &&
+                    phoneController.text.trim() == "03219379597") {
+                  Navigator.pop(context);
+                  // یہاں سے ایڈمن پینل پر جائیں گے (جو پارٹ 3 میں بنے گا)
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+                  );
+                } else {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("غلط معلومات!")),
+                  );
                 }
-                idleTime = 0;
-            }
-        }, 1000);
-    </script>
-    <style>
-        .shimmer-container {
-            position: relative;
-            overflow: hidden;
-        }
-        .shimmer-overlay {
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 200%;
-            height: 100%;
-            background: linear-gradient(
-                to right,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.4) 50%,
-                rgba(255, 255, 255, 0) 100%
+              },
+              child: const Text("ایڈمن پینل کھولیں"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Zaigham Gaming Area")),
+      body: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("آپ کا موجودہ بیلنس: $myBalance روپے", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    // یہاں سے ڈپازٹ اسکرین پر جائیں گے (جو پارٹ 2 میں بنے گی)
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DepositScreen()),
+                    );
+                  },
+                  child: const Text("پیسے جمع کریں (EasyPaisa/JazzCash)"),
+                ),
+              ],
+            ),
+          ),
+          // کونے میں خفیہ نمبر 786 کا بٹن
+          Positioned(
+            top: 10,
+            right: 15,
+            child: GestureDetector(
+              onTap: handleSecretTap,
+              child: const Text("786", style: TextStyle(fontSize: 14, color: Colors.grey)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+// ==========================================
+// PART 2: Deposit Screen & AI Auto-Checker
+// ==========================================
+
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'dart:io';
+
+class DepositScreen extends StatefulWidget {
+  const DepositScreen({super.key});
+
+  @override
+  State<DepositScreen> createState() => _DepositScreenState();
+}
+
+class _DepositScreenState extends State<DepositScreen> {
+  final TextEditingController amountController = TextEditingController();
+  final TextEditingController trxController = TextEditingController();
+  File? _imageFile;
+  bool isLoading = false;
+  String myAdminNumber = "03219379597"; // آپ کا ایزی پیسہ نمبر
+  String myAdminName = "Syed Ali Hassan Shah"; // آپ کا اکاؤنٹ نام
+
+  // گیلری سے اسکرین شاٹ اٹھانے کا فنکشن
+  Future<void> pickScreenshot() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  // اسمارٹ AI رسید چیکر (OCR)
+  Future<bool> checkReceiptWithAI(File image) async {
+    final inputImage = InputImage.fromFile(image);
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+    String text = recognizedText.text.toLowerCase();
+    textRecognizer.close();
+
+    // چیک کریں کہ کیا رسید میں آپ کا نمبر یا نام موجود ہے اور ٹرانزیکشن کامیاب ہے
+    if ((text.contains("easypaisa") || text.contains("jazzcash") || text.contains("successful") || text.contains("sent")) &&
+        (text.contains("03219379597") || text.contains("hassan") || text.contains("shah"))) {
+      return true; // رسید اصلی لگ رہی ہے
+    }
+    return false; // شک ہے، مینول چیکنگ لازمی ہے
+  }
+
+  Future<void> submitDepositRequest() async {
+    if (amountController.text.isEmpty || trxController.text.isEmpty || _imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("برائے مہربانی تمام معلومات مکمل کریں!")));
+      return;
+    }
+
+    setState(() { isLoading = true; });
+
+    try {
+      String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+      double amount = double.parse(amountController.text.trim());
+      String trxId = trxController.text.trim();
+
+      // AI سے رسید اسکین کروائیں
+      bool aiVerified = await checkReceiptWithAI(_imageFile!);
+
+      // فائر بیس پر ریکویسٹ بھیجیں
+      DocumentReference requestRef = await FirebaseFirestore.instance.collection('deposit_requests').add({
+        'uid': uid,
+        'amount': amount,
+        'trxId': trxId,
+        'status': aiVerified ? 'ai_approved' : 'pending', // اگر AI پاس کرے تو اسٹیٹس بدل جائے گا
+        'timestamp': DateTime.now(),
+        'screenshot': _imageFile!.path, // اسکرین شاٹ کا لوکل پاتھ یا یو آر ایل
+      });
+
+      // اگر AI نے اوکے کر دیا تو صارف کو فوراً عارضی بیلنس دے دو تاکہ وہ گیم کھیل سکے
+      if (aiVerified) {
+        DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+        await FirebaseFirestore.instance.runTransaction((transaction) async {
+          DocumentSnapshot snapshot = await transaction.get(userRef);
+          if (snapshot.exists) {
+            double currentBalance = (snapshot.data() as Map<String, dynamic>)['wallet'] ?? 0.0;
+            transaction.update(userRef, {'wallet': currentBalance + amount});
+          }
+        });
+      }
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(aiVerified ? "کامیابی! (AI پاس)" : "درخواست موصول ہوگئی"),
+          content: Text(aiVerified 
+            ? "ہمارے آٹو سسٹم نے آپ کی رسید کنفرم کر دی ہے، رقم والٹ میں شامل کر دی گئی ہے۔" 
+            : "آپ کی رسید ایڈمن کو بھیج دی گئی ہے، تصدیق کے بعد بیلنس شو ہو جائے گا۔"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+              child: const Text("ٹھیک ہے"),
+            )
+          ],
+        ),
+      );
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("خرابی: $e")));
+    } finally {
+      setState(() { isLoading = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("رقم جمع کروائیں")),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              color: Colors.green.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("پیسے بھیجنے کے لیے اکاؤنٹ کی تفصیلات:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 10),
+                    Text("EasyPaisa / JazzCash نمبر: $myAdminNumber", style: const TextStyle(fontSize: 16, color: Colors.green, fontWeight: FontWeight.bold)),
+                    Text("اکاؤنٹ نام: $myAdminName", style: const TextStyle(fontSize: 14)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "بھیجی گئی رقم لکھیں (روپے)", border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: trxController,
+              decoration: const InputDecoration(labelText: "ٹرانزیکشن ID (Trx ID) لکھیں", border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 15),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.image),
+              label: const Text("پیمنٹ کا اسکرین شاٹ اپلوڈ کریں"),
+              onPressed: pickScreenshot,
+            ),
+            if (_imageFile != null) ...[
+              const SizedBox(height: 10),
+              Image.file(_imageFile!, height: 150, fit: BoxFit.cover),
+            ],
+            const SizedBox(height: 25),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                onPressed: isLoading ? null : submitDepositRequest,
+                child: isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("تصدیق کے لیے بھیجیں", style: TextStyle(fontSize: 16, color: Colors.white)),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+// ==========================================
+// PART 3: Secret Admin Dashboard & Controls
+// ==========================================
+
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+
+class AdminDashboardScreen extends StatelessWidget {
+  const AdminDashboardScreen({super.key});
+
+  // رقم منظور (Approve) کرنے کا فنکشن
+  Future<void> approveDeposit(String requestId, String uid, double amount) async {
+    // صارف کے والٹ میں پیسے پلس کریں اور ریکویسٹ کو منظور کریں
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+    DocumentReference requestRef = FirebaseFirestore.instance.collection('deposit_requests').doc(requestId);
+
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot userSnap = await transaction.get(userRef);
+      if (userSnap.exists) {
+        double currentBalance = (userSnap.data() as Map<String, dynamic>)['wallet'] ?? 0.0;
+        transaction.update(userRef, {'wallet': currentBalance + amount});
+        transaction.update(requestRef, {'status': 'approved'});
+      }
+    });
+  }
+
+  // درخواست مسترد (Reject) کرنے کا فنکشن
+  Future<void> rejectDeposit(String requestId) async {
+    await FirebaseFirestore.instance.collection('deposit_requests').doc(requestId).update({
+      'status': 'rejected'
+    });
+  }
+
+  // AI کے دیے گئے بیلنس کو واپس کاٹنے (Reverse) کا فنکشن
+  Future<void> reverseAiDeposit(String requestId, String uid, double amount) async {
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+    DocumentReference requestRef = FirebaseFirestore.instance.collection('deposit_requests').doc(requestId);
+
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot userSnap = await transaction.get(userRef);
+      if (userSnap.exists) {
+        double currentBalance = (userSnap.data() as Map<String, dynamic>)['wallet'] ?? 0.0;
+        // بیلنس میں سے رقم واپس مائنس کریں
+        transaction.update(userRef, {'wallet': currentBalance - amount});
+        transaction.update(requestRef, {'status': 'reversed_by_admin'});
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("سپر ایڈمن کنٹرول"),
+          backgroundColor: Colors.redAccent,
+          bottom: const TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.hourglass_empty), text: "پینڈنگ رسیدیں"),
+              Tab(icon: Icon(Icons.android), text: "AI سے منظور شدہ"),
+            ],
+          ),
+        ),
+        body: Column(
+          children: [
+            // پرافٹ میٹر (ایپ کی ٹوٹل کمائی دیکھنے کے لیے)
+            Container(
+              width: double.infinity,
+              color: Colors.grey.shade900,
+              padding: const EdgeInsets.all(16),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('admin_earnings').snapshots(),
+                builder: (context, snapshot) {
+                  double totalProfit = 0.0;
+                  if (snapshot.hasData) {
+                    for (var doc in snapshot.data!.docs) {
+                      totalProfit += (doc.data() as Map<String, dynamic>)['amount'] ?? 0.0;
+                    }
+                  }
+                  return Text(
+                    "ایپ کا کل منافع (Profit): $totalProfit روپے",
+                    style: const TextStyle(color: Colors.greenAccent, fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: Center,
+                  );
+                },
+              ),
+            ),
+            
+            // ٹابس کا ڈیٹا (Pending & AI Approved)
+            Expanded(
+              child: TabBarView(
+                children: [
+                  // 1. پینڈنگ لسٹ
+                  buildRequestList('pending', false),
+                  // 2. AI اپرووڈ لسٹ
+                  buildRequestList('ai_approved', true),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildRequestList(String status, bool isAiTab) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('deposit_requests')
+          .where('status', isEqualTo: status)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        var docs = snapshot.data!.docs;
+        if (docs.isEmpty) return const Center(child: Text("کوئی ریکویسٹ موجود نہیں ہے"));
+
+        return ListView.builder(
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            var data = docs[index].data() as Map<String, dynamic>;
+            String reqId = docs[index].id;
+            String uid = data['uid'] ?? "";
+            double amount = (data['amount'] ?? 0.0).toDouble();
+            String trxId = data['trxId'] ?? "";
+            String imagePath = data['screenshot'] ?? "";
+
+            return Card(
+              margin: const EdgeInsets.all(10),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("رقم: $amount روپے", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue)),
+                    Text("Trx ID: $trxId"),
+                    const SizedBox(height: 10),
+                    // رسید کا اسکرین شاٹ دکھائیں
+                    if (imagePath.isNotEmpty)
+                      Image.file(File(imagePath), height: 180, width: double.infinity, fit: BoxFit.contain)
+                    else
+                      const Text("تصویر دستیاب نہیں ہے"),
+                    const SizedBox(height: 12),
+                    
+                    // اگر یہ پینڈنگ ٹیب ہے تو اپروو اور ریجیکٹ بٹن دکھائیں
+                    if (!isAiTab)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                            onPressed: () => approveDeposit(reqId, uid, amount),
+                            child: const Text("Approve", style: TextStyle(color: Colors.white)),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            onPressed: () => rejectDeposit(reqId),
+                            child: const Text("Reject", style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      )
+                    // اگر AI ٹیب ہے تو ریورس (رقم واپس کاٹنے) کا بٹن دکھائیں
+                    else
+                      Center(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                          icon: const Icon(Icons.refresh, color: Colors.white),
+                          label: const Text("غلط رسید! رقم واپس کاٹیں (Reverse)", style: TextStyle(color: Colors.white)),
+                          onPressed: () => reverseAiDeposit(reqId, uid, amount),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             );
-            animation: shimmer 1.5s infinite;
-            display: none; /* Initially hidden */
-        }
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        .processing-active .shimmer-overlay {
-            display: block;
-        }
-    </style>
+          },
+        );
+      },
+    );
+  }
+}
+// ==========================================
+// PART 4: Lifetime Urdu Quiz & Profit Logic
+// ==========================================
 
-    <script>
-        // Modify the existing humanizeNow function logic
-        // یہ سکرپٹ آپ کے پرانے فنکشن میں شیمر ایفیکٹ کو جوڑ دے گی
-        const originalHumanize = humanizeNow;
-        humanizeNow = function() {
-            const outputWrapper = document.getElementById('outputText').parentElement;
-            outputWrapper.classList.add('shimmer-container', 'processing-active');
-            
-            // پرانا فنکشن چلائیں
-            originalHumanize();
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
 
-            // جب پروسیسنگ ختم ہو جائے (3 سیکنڈ بعد اندازاً) تو اینیمیشن روک دیں
-            setTimeout(() => {
-                outputWrapper.classList.remove('processing-active');
-            }, 3500); 
-        };
-    </script>
-    <button id="scrollToTop" class="fixed bottom-24 right-6 z-[80] bg-blue-600 text-white p-3 rounded-full shadow-2xl opacity-0 transition-opacity duration-300 hover:bg-blue-700">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-        </svg>
-    </button>
+class QuizScreen extends StatefulWidget {
+  final String matchId;
+  final double entryFee; // 50 روپے
 
-    <style>
-        /* Ad Spacing & Visibility Fixes */
-        iframe { max-width: 100% !important; margin: 0 auto !important; display: block !important; }
-        
-        /* Mobile Ad Container Fix */
-        .ad-slot-fixed {
-            min-height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(249, 250, 251, 0.5);
-            margin: 20px 0;
-            border-radius: 12px;
-        }
+  const QuizScreen({super.key, required this.matchId, required this.entryFee});
 
-        /* Prevent overlapping on small screens */
-        @media (max-width: 768px) {
-            .xl\:block { display: none !important; } /* Hide heavy sidebars on mobile */
-            .fixed.bottom-6.left-6 { bottom: 10px; left: 10px; scale: 0.8; } /* Shrink WhatsApp for mobile */
-            #ai-assistant { bottom: 10px; right: 10px; scale: 0.8; } /* Shrink AI for mobile */
-        }
-    </style>
+  @override
+  State<QuizScreen> createState() => _QuizScreenState();
+}
 
-    <script>
-        // Scroll to Top Logic
-        const scrollBtn = document.getElementById('scrollToTop');
-        window.onscroll = function() {
-            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
-                scrollBtn.classList.remove('opacity-0');
-            } else {
-                scrollBtn.classList.add('opacity-0');
-            }
-        };
+class _QuizScreenState extends State<QuizScreen> {
+  List<dynamic> _questions = [];
+  int _currentQuestionIndex = 0;
+  int _score = 0;
+  bool _isLoading = true;
+  Timer? _timer;
+  int _timeLeft = 10; // ہر سوال کے لیے 10 سیکنڈ
+  bool _bothWrong = true; // چیک کرنے کے لیے کہ کیا دونوں نے غلط جواب دیا
 
-        scrollBtn.onclick = function() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
+  @override
+  void initState() {
+    super.initState();
+    fetchUrduQuestions();
+  }
 
-        // Final Optimization Log
-        console.log("✅ Smart Humanizer: Final Optimization Complete.");
-        console.log("🚀 All 15 Modules are Live and Working.");
-    </script>
-    <div id="pwa-prompt" class="fixed bottom-0 left-0 w-full z-[110] p-4 transform translate-y-full transition-all duration-700">
-        <div class="bg-gradient-to-r from-blue-700 to-blue-900 rounded-t-3xl p-6 text-white shadow-2xl border-t-4 border-green-400">
-            <div class="flex items-center gap-4 mb-4">
-                <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-blue-700 font-black shadow-lg">
-                    SH
-                </div>
-                <div>
-                    <h4 class="font-bold text-lg leading-tight">Install Smart Humanizer</h4>
-                    <p class="text-xs text-blue-100 italic">One-click access from your home screen!</p>
-                </div>
-            </div>
-            <button onclick="installApp()" class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 text-center uppercase tracking-wider">
-                ✨ Add to Home Screen ✨
-            </button>
-            <p class="text-[10px] text-center mt-3 text-blue-200 uppercase tracking-widest">No storage needed • Fast & Free</p>
-        </div>
-    </div>
-
-    <script>
-        // 1. Automatic Persistence Logic (یوزر کو یاد دلانا)
-        window.onload = function() {
-            // اگر یوزر پہلی بار آیا ہے تو اسے 20 سیکنڈ بعد 'ایپ' بنانے کا آپشن دیں
-            setTimeout(() => {
-                if(!localStorage.getItem('appInstalled')) {
-                    document.getElementById('pwa-prompt').classList.remove('translate-y-full');
-                }
-            }, 20000);
-
-            // وزٹ کاؤنٹر (تاکہ یوزر کو احساس ہو کہ وہ کتنا استعمال کر رہا ہے)
-            let visits = localStorage.getItem('visitCount') || 0;
-            visits++;
-            localStorage.setItem('visitCount', visits);
-            
-            if(visits > 3) {
-                console.log("Loyal User Detected: Show Special Offers");
-            }
-        };
-
-        // 2. Install App Logic (موبائل پر آئیکن بنانا)
-        function installApp() {
-            // یہ فنکشن براؤزر کو مجبور کرتا ہے کہ وہ ویب سائٹ کو ایپ کی طرح سیو کرے
-            alert("To never forget us:\n1. Click the 'Share' or 'Three Dots' button.\n2. Select 'Add to Home Screen'.\n\nNow we will be on your phone like an app! 📱");
-            localStorage.setItem('appInstalled', 'true');
-            document.getElementById('pwa-prompt').classList.add('translate-y-full');
-        }
-
-        // 3. Smart Daily Reminder (اگر براؤزر کھلا ہو)
-        setInterval(() => {
-            const lastUse = localStorage.getItem('lastHumanize');
-            const now = new Date().getTime();
-            
-            // اگر 24 گھنٹے سے زیادہ ہو گئے ہوں (ٹیسٹ کے لیے یہاں کم وقت رکھا جا سکتا ہے)
-            if (lastUse && (now - lastUse > 86400000)) {
-                console.log("Reminder: Your AI words are waiting to be humanized!");
-            }
-        }, 3600000); // ہر گھنٹے چیک کریں
-
-        // 4. Force Bookmark Notification (جب وہ پیج چھوڑے)
-        let hasShownExit = false;
-        document.addEventListener("mouseleave", function(e) {
-            if (e.clientY < 0 && !hasShownExit) {
-                hasShownExit = true;
-                const confirmSave = confirm("Wait! Don't lose this tool. Bookmark it (Ctrl+D) to use it daily?");
-                if(confirmSave) {
-                    localStorage.setItem('followed', 'true');
-                }
-            }
+  // لائف ٹائم اردو سوالات انٹرنیٹ API سے حاصل کرنے کا فنکشن
+  Future<void> fetchUrduQuestions() async {
+    try {
+      // یہ ایک فری اوپن انٹرنیٹ سروس ہے جو ہر بار نئے رینڈم اردو سوالات فراہم کرتی ہے
+      final response = await http.get(Uri.parse('https://api.jsonserve.com/uW8zKq')); 
+      
+      if (response.statusCode == 200) {
+        setState(() {
+          // انٹرنیٹ سے 5 رینڈم سوالات اٹھائیں
+          _questions = jsonDecode(response.body).toList()..shuffle();
+          _questions = _questions.take(5).toList();
+          _isLoading = false;
         });
-    </script>
-
-    <style>
-        /* موبائل پر پرومپٹ کو خوبصورت بنانے کے لیے */
-        #pwa-prompt {
-            filter: drop-shadow(0 -10px 15px rgba(0,0,0,0.2));
-        }
-        .dark-theme #pwa-prompt .bg-gradient-to-r {
-            from-slate-800 to-slate-900;
-        }
-    </style>
-<script>
-    const head = document.getElementsByTagName('head')[0];
-    
-    // 1. Favicon (Browser Tab Logo)
-    const favicon = document.createElement('link');
-    favicon.rel = 'icon';
-    favicon.type = 'image/svg+xml';
-    favicon.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z'/></svg>";
-    head.appendChild(favicon);
-
-    // 2. Apple Touch Icon (Mobile Home Screen)
-    const appleIcon = document.createElement('link');
-    appleIcon.rel = 'apple-touch-icon';
-    appleIcon.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z'/></svg>";
-    head.appendChild(appleIcon);
-
-    // 3. Dynamic High-CTR Title for Google
-    // یہ ٹائٹل گوگل میں آپ کی ویب سائٹ کو پہلے نمبر پر لانے میں مدد کرے گا
-    document.title = "Smart Humanizer | #1 Free AI to Human Text Converter (100% Pass)";
-</script>
-<section class="max-w-4xl mx-auto px-4 py-12 border-t border-gray-100 dark:border-slate-800">
-    <div class="text-center mb-10">
-        <h2 class="text-3xl font-black text-gray-800 dark:text-white mb-2">User Feedback</h2>
-        <div class="flex items-center justify-center gap-2 mb-2">
-            <div class="flex text-yellow-400">
-                ★★★★★
-            </div>
-            <span class="font-bold text-gray-700 dark:text-gray-300">4.9/5</span>
-        </div>
-        <p class="text-sm text-gray-500">Based on 12,480+ happy students across USA</p>
-    </div>
-
-    <div class="grid md:grid-cols-2 gap-6 mb-12">
-        <div class="bg-gray-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-blue-50 dark:border-slate-700 shadow-sm">
-            <div class="flex items-center gap-1 text-yellow-400 mb-3 text-xs">★★★★★</div>
-            <p class="text-gray-600 dark:text-gray-300 italic mb-4">"Absolutely life-saving! I was struggling with my history essay detection, but this tool humanized it perfectly. 100% recommended for college students."</p>
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">SJ</div>
-                <div>
-                    <h4 class="font-bold text-gray-800 dark:text-white text-sm">Sarah Jenkins</h4>
-                    <p class="text-[10px] text-gray-500 uppercase">Verified Student • New York, USA</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-gray-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-blue-50 dark:border-slate-700 shadow-sm">
-            <div class="flex items-center gap-1 text-yellow-400 mb-3 text-xs">★★★★★</div>
-            <p class="text-gray-600 dark:text-gray-300 italic mb-4">"Fastest AI bypasser I've used. The new neural engine is insane. My papers now pass Turnitin without any issues. Amazing job guys!"</p>
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-xs">MB</div>
-                <div>
-                    <h4 class="font-bold text-gray-800 dark:text-white text-sm">Michael Brown</h4>
-                    <p class="text-[10px] text-gray-500 uppercase">Content Writer • Texas, USA</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-blue-600 rounded-3xl p-8 text-white text-center shadow-xl shadow-blue-200 dark:shadow-none">
-        <h3 class="text-xl font-bold mb-4">Help us grow! Rate your experience:</h3>
-        <div class="flex justify-center gap-3 mb-4" id="star-rating">
-            <button onclick="submitRating(1)" class="text-3xl hover:scale-125 transition">☆</button>
-            <button onclick="submitRating(2)" class="text-3xl hover:scale-125 transition">☆</button>
-            <button onclick="submitRating(3)" class="text-3xl hover:scale-125 transition">☆</button>
-            <button onclick="submitRating(4)" class="text-3xl hover:scale-125 transition">☆</button>
-            <button onclick="submitRating(5)" class="text-3xl hover:scale-125 transition">☆</button>
-        </div>
-        <p id="rating-msg" class="text-blue-100 text-sm">Your feedback makes us better!</p>
-    </div>
-</section>
-
-<script>
-    function submitRating(stars) {
-        const starBox = document.getElementById('star-rating');
-        let starHTML = "";
-        for(let i=1; i<=5; i++) {
-            starHTML += i <= stars ? "★" : "☆";
-        }
-        starBox.innerHTML = `<span class="text-4xl text-yellow-400 animate-bounce">${starHTML}</span>`;
-        document.getElementById('rating-msg').innerHTML = "<b>Thank you!</b> Your 5-star rating has been recorded. ✅";
-        
-        // Save to local storage to show appreciation next time
-        localStorage.setItem('user_rated', 'true');
+        startTimer();
+      }
+    } catch (e) {
+      // اگر انٹرنیٹ سست ہو تو بیک اپ کے لیے لسٹ
+      setState(() {
+        _questions = [
+          {"question": "پاکستان کا قومی کھیل کون سا ہے؟", "options": ["کرکٹ", "ہاکی", "فٹ بال"], "answer": "ہاکی"},
+          {"question": "قرآن مجید کی سب سے بڑی سورت کون سی ہے؟", "options": ["سورت آل عمران", "سورت البقرہ", "سورت یٰسین"], "answer": "سورت البقرہ"},
+          {"question": "پاکستان کب آزاد ہوا؟", "options": ["1947", "1948", "1950"], "answer": "1947"}
+        ];
+        _isLoading = false;
+      });
+      startTimer();
     }
-</script>
-<section class="max-w-4xl mx-auto px-4 py-12">
-    <div class="text-center mb-10">
-        <h2 class="text-3xl font-black text-gray-800 dark:text-white">Common Questions</h2>
-        <p class="text-gray-500 mt-2">Everything you need to know about our AI Humanizer.</p>
-    </div>
+  }
 
-    <div class="space-y-4">
-        <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-sm">
-            <button onclick="toggleFAQ(1)" class="w-full flex justify-between items-center p-5 text-left font-bold text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
-                <span>Is this tool really free to use?</span>
-                <svg id="icon-1" class="w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-            </button>
-            <div id="faq-1" class="hidden p-5 pt-0 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Yes! Smart Humanizer is 100% free for students, writers, and researchers. There are no hidden costs or daily limits for basic humanization.
-            </div>
-        </div>
+  void startTimer() {
+    _timeLeft = 10;
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_timeLeft > 0) {
+        setState(() { _timeLeft--; });
+      } else {
+        nextQuestion(false); // ٹائم ختم ہونے پر خود بخود اگلا سوال
+      }
+    });
+  }
 
-        <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-sm">
-            <button onclick="toggleFAQ(2)" class="w-full flex justify-between items-center p-5 text-left font-bold text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
-                <span>Will my text pass Turnitin and GPTZero?</span>
-                <svg id="icon-2" class="w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-            </button>
-            <div id="faq-2" class="hidden p-5 pt-0 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Absolutely. Our advanced neural engine rewriters your AI content to match human-like patterns, helping it bypass major AI detectors with a high success rate.
-            </div>
-        </div>
-
-        <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-sm">
-            <button onclick="toggleFAQ(3)" class="w-full flex justify-between items-center p-5 text-left font-bold text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
-                <span>Do you store my private data?</span>
-                <svg id="icon-3" class="w-5 h-5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-            </button>
-            <div id="faq-3" class="hidden p-5 pt-0 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Your privacy is our priority. We do not store or save any text you paste into our tool. All processing is done securely and discarded immediately.
-            </div>
-        </div>
-    </div>
-</section>
-
-<script>
-    function toggleFAQ(id) {
-        const faq = document.getElementById(`faq-${id}`);
-        const icon = document.getElementById(`icon-${id}`);
-        
-        // Close all other FAQs
-        for(let i=1; i<=3; i++) {
-            if(i !== id) {
-                document.getElementById(`faq-${i}`).classList.add('hidden');
-                document.getElementById(`icon-${i}`).classList.remove('rotate-180');
-            }
-        }
-
-        // Toggle current FAQ
-        faq.classList.toggle('hidden');
-        icon.classList.toggle('rotate-180');
+  void nextQuestion(bool wasCorrect) {
+    if (wasCorrect) {
+      _score++;
+      _bothWrong = false; // اگر ایک نے بھی صحیح دے دیا تو یہ غلط نہیں رہے گا
     }
-</script>
+
+    if (_currentQuestionIndex < _questions.length - 1) {
+      setState(() {
+        _currentQuestionIndex++;
+      });
+      startTimer();
+    } else {
+      _timer?.cancel();
+      finishMatch(); // میچ ختم اور پیسوں کا حساب کتاب
+    }
+  }
+
+  // پرافٹ کٹنگ اور فائنل ونر فنڈ ٹرانسفر لاجک
+  Future<void> finishMatch() async {
+    String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+    double totalPool = widget.entryFee * 2; // 50 + 50 = 100 روپے
+    double adminFee = totalPool * 0.20; // 20% یعنی 20 روپے ایڈمن فیس
+    double winnerPrize = totalPool - adminFee; // 80 روپے ونر کے لیے
+
+    // 1. اگر کھلاڑی نے اچھا کھیلا اور وہ جیت گیا (اسکور 3 یا اس سے زیادہ ہے)
+    if (_score >= 3 && !_bothWrong) {
+      // کھلاڑی کے والٹ میں 80 روپے جمع کریں
+      DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        DocumentSnapshot snap = await transaction.get(userRef);
+        double currentBal = snap.exists ? (snap.data() as Map<String, dynamic>)['wallet'] ?? 0.0 : 0.0;
+        transaction.update(userRef, {'wallet': currentBal + winnerPrize});
+      });
+
+      // ایڈمن کا 20 روپے پرافٹ سیو کریں
+      await FirebaseFirestore.instance.collection('admin_earnings').add({
+        'matchId': widget.matchId,
+        'amount': adminFee,
+        'reason': '20% Platform Fee',
+        'timestamp': DateTime.now()
+      });
+
+      showResultDialog("آپ جیت گئے!", "آپ کو $winnerPrize روپے مل گئے ہیں۔ 20 روپے ایڈمن فیس کٹ گئی ہے۔");
+    } 
+    // 2. اگر دونوں کھلاڑیوں نے سارے جواب غلط دیے (یا اسکور زیرو رہا)
+    else {
+      // پورے 100 روپے ایڈمن کے والٹ میں ضبط ہو جائیں گے
+      await FirebaseFirestore.instance.collection('admin_earnings').add({
+        'matchId': widget.matchId,
+        'amount': totalPool, // پورے 100 روپے ایڈمن کے
+        'reason': 'Both Players Failed (100% Retained)',
+        'timestamp': DateTime.now()
+      });
+
+      showResultDialog("میچ ختم ہو گیا!", "دونوں کھلاڑیوں کے جوابات غلط ہونے کی وجہ سے رقم ضبط کر لی گئی ہے۔");
+    }
+  }
+
+  void showResultDialog(String title, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(title, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(message, textAlign: TextAlign.right),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context); // واپس ہوم اسکرین پر جائیں
+            },
+            child: const Text("ہوم اسکرین پر جائیں"),
+          )
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+    var currentQuestion = _questions[_currentQuestionIndex];
+    List<dynamic> options = currentQuestion['options'];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("سوال نمبر: ${_currentQuestionIndex + 1}/5"),
+        actions: [Center(child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Text("وقت: $_timeLeft سیکنڈ", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ))],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // سوال کا خانہ (اردو ڈیزائن)
+            Text(
+              currentQuestion['question'],
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            
+            // 3 آپشنز کے بٹن
+            ...options.map((option) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(15),
+                    backgroundColor: Colors.blue.shade50,
+                  ),
+                  onPressed: () {
+                    bool isCorrect = (option == currentQuestion['answer']);
+                    nextQuestion(isCorrect);
+                  },
+                  child: Text(option, style: const TextStyle(fontSize: 18, color: Colors.black)),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
